@@ -38,3 +38,34 @@ public class SomeClass {
   private SoftAssertions softly;
 }
 ```
+
+## Naming Convertions
+
+### Method
+
+```java
+public void methodName_condition_expectedResult() {
+  // ...
+}
+```
+
+### System Under Test
+
+```java
+public void methodName_condition_expectedResult() {
+  // ...
+
+  // Act
+  final var sut = ...;
+
+  // ...
+}
+```
+
+## Avoid control-flow statements
+
+Test methods MUST NOT contain control-flow statements such as if, while, for, or switch.
+
+## Avoid multiple Act tasks
+
+Test methods MUST NOT contain multiple Act tasks.
