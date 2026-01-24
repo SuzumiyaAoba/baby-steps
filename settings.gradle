@@ -1,1 +1,7 @@
 rootProject.name = 'baby-steps'
+
+include 'core'
+project(':core').projectDir = file('packages/core')
+
+include 'fp'
+project(':fp').projectDir = file('packages/fp')
