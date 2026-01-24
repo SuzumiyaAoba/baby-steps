@@ -556,6 +556,25 @@ class ResultTest {
   }
 
   @Test
+  void isOkAnd_withOkFailingPredicate_expectedFalse() {
+    // Arrange
+    final var called = new AtomicBoolean(false);
+    final var sut = Result.<String, String>ok("value");
+
+    // Act
+    final var result =
+        sut.isOkAnd(
+            value -> {
+              called.set(true);
+              return value.startsWith("nope");
+            });
+
+    // Assert
+    softly.assertThat(result).isFalse();
+    softly.assertThat(called).isTrue();
+  }
+
+  @Test
   void isOkAnd_withErr_expectedFalseAndPredicateNotCalled() {
     // Arrange
     final var called = new AtomicBoolean(false);
@@ -584,6 +603,25 @@ class ResultTest {
 
     // Assert
     softly.assertThat(result).isTrue();
+  }
+
+  @Test
+  void isErrAnd_withErrFailingPredicate_expectedFalse() {
+    // Arrange
+    final var called = new AtomicBoolean(false);
+    final var sut = Result.<String, String>err("error");
+
+    // Act
+    final var result =
+        sut.isErrAnd(
+            value -> {
+              called.set(true);
+              return value.startsWith("nope");
+            });
+
+    // Assert
+    softly.assertThat(result).isFalse();
+    softly.assertThat(called).isTrue();
   }
 
   @Test
