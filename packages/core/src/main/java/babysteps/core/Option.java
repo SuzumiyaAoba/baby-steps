@@ -94,11 +94,10 @@ public sealed interface Option<T> permits Option.Some, Option.None {
    * @param <T> value type
    * @return Option of optional
    */
-  static <T> Option<T> fromOptional(@NonNull Optional<? extends T> optional) {
-    Objects.requireNonNull(optional, "optional");
-    @SuppressWarnings("unchecked")
-    final var result = (Option<T>) optional.map(Option::some).orElseGet(Option::none);
-    return result;
+  @SuppressWarnings("OptionalUsedAsFieldOrParameterType")
+  static <T> Option<T> fromOptional(@NonNull Optional<T> optional) {
+    final var nonNullOptional = Objects.requireNonNull(optional, "optional");
+    return nonNullOptional.map(Option::some).orElseGet(Option::none);
   }
 
   /**
@@ -390,7 +389,7 @@ public sealed interface Option<T> permits Option.Some, Option.None {
     }
 
     @Override
-    public String toString() {
+    public @NonNull String toString() {
       return "Some(" + value + ")";
     }
   }
@@ -431,7 +430,7 @@ public sealed interface Option<T> permits Option.Some, Option.None {
     }
 
     @Override
-    public String toString() {
+    public @NonNull String toString() {
       return "None";
     }
   }
