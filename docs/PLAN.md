@@ -9,12 +9,12 @@
 ### core
 - [ ] Option
   - [x] Some/None, map/flatMap, filter, toOptional
-  - [ ] fold, orElse, peek, contains, equals/hashCode tests
+  - [x] fold, orElse, peek, contains, equals/hashCode tests
 - [ ] Result
   - [x] Ok/Err, map/mapErr, flatMap, unwrap helpers
   - [ ] fold, recover, toOption, contains, equals/hashCode tests
 - [ ] Try
-  - [ ] Capture checked exceptions into Result-like model
+  - [x] Capture checked exceptions into Result-like model
 - [ ] Unit
   - [ ] Singleton type to model void in FP pipelines
 
