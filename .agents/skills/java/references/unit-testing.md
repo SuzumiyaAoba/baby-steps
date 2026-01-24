@@ -6,7 +6,24 @@
 - AssertJ
 - Mockito
 
-### Soft Assertions with AssertJ
+## AAA (Arrange-Act-Assert) pattern
+
+Write tests using the AAA pattern.
+
+```java
+public void methodName_condition_expectedResult() {
+  // Arrange
+  ...
+
+  // Act
+  ...
+
+  // Assert
+  ...
+}
+```
+
+## Soft Assertions with AssertJ
 
 Use `SoftAssetions` to avoid assertion roulette.
 
