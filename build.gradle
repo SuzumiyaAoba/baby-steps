@@ -6,9 +6,14 @@ plugins {
 group = 'babysteps'
 version = '0.1.0-SNAPSHOT'
 
+tasks.register('jacocoTestReport') {
+  dependsOn(subprojects.collect { it.tasks.named('jacocoTestReport') })
+}
+
 subprojects {
   apply plugin: 'java-library'
   apply plugin: 'com.diffplug.spotless'
+  apply plugin: 'jacoco'
 
   java {
     toolchain {
@@ -31,6 +36,20 @@ subprojects {
 
   test {
     useJUnitPlatform()
+    finalizedBy jacocoTestReport
+  }
+
+  jacoco {
+    toolVersion = '0.8.12'
+  }
+
+  jacocoTestReport {
+    dependsOn test
+    reports {
+      xml.required = true
+      html.required = true
+      csv.required = false
+    }
   }
 
   spotless {
