@@ -168,6 +168,18 @@ class OptionTest {
   }
 
   @Test
+  void map_withNone_expectedNone() {
+    // Arrange
+    final var sut = Option.<String>none();
+
+    // Act
+    final var result = sut.map(String::trim);
+
+    // Assert
+    softly.assertThat(result.isEmpty()).isTrue();
+  }
+
+  @Test
   void filter_withPassingPredicate_expectedSome() {
     // Arrange
     final var sut = Option.some(10);
@@ -177,6 +189,18 @@ class OptionTest {
 
     // Assert
     softly.assertThat(result.get()).isEqualTo(10);
+  }
+
+  @Test
+  void filter_withNone_expectedNone() {
+    // Arrange
+    final var sut = Option.<Integer>none();
+
+    // Act
+    final var result = sut.filter(value -> value > 5);
+
+    // Assert
+    softly.assertThat(result.isEmpty()).isTrue();
   }
 
   @Test
@@ -216,6 +240,18 @@ class OptionTest {
   }
 
   @Test
+  void flatMap_withNone_expectedNone() {
+    // Arrange
+    final var sut = Option.<Integer>none();
+
+    // Act
+    final var result = sut.flatMap(value -> Option.some(value + 1));
+
+    // Assert
+    softly.assertThat(result.isEmpty()).isTrue();
+  }
+
+  @Test
   void getOrElse_withNone_expectedFallback() {
     // Arrange
     final var sut = Option.<String>none();
@@ -228,6 +264,18 @@ class OptionTest {
   }
 
   @Test
+  void getOrElse_withSome_expectedValue() {
+    // Arrange
+    final var sut = Option.some("value");
+
+    // Act
+    final var result = sut.getOrElse("fallback");
+
+    // Assert
+    softly.assertThat(result).isEqualTo("value");
+  }
+
+  @Test
   void getOrElseGet_withNone_expectedSupplierValue() {
     // Arrange
     final var sut = Option.<String>none();
@@ -237,6 +285,25 @@ class OptionTest {
 
     // Assert
     softly.assertThat(result).isEqualTo("fallback");
+  }
+
+  @Test
+  void getOrElseGet_withSome_expectedValueAndSupplierNotCalled() {
+    // Arrange
+    final var called = new AtomicBoolean(false);
+    final var sut = Option.some("value");
+
+    // Act
+    final var result =
+        sut.getOrElseGet(
+            () -> {
+              called.set(true);
+              return "fallback";
+            });
+
+    // Assert
+    softly.assertThat(result).isEqualTo("value");
+    softly.assertThat(called).isFalse();
   }
 
   @Test
@@ -273,6 +340,25 @@ class OptionTest {
 
     // Assert
     softly.assertThat(result.get()).isEqualTo("fallback");
+  }
+
+  @Test
+  void orElseGet_withSome_expectedOriginalAndSupplierNotCalled() {
+    // Arrange
+    final var called = new AtomicBoolean(false);
+    final var sut = Option.some("value");
+
+    // Act
+    final var result =
+        sut.orElseGet(
+            () -> {
+              called.set(true);
+              return Option.some("fallback");
+            });
+
+    // Assert
+    softly.assertThat(result.get()).isEqualTo("value");
+    softly.assertThat(called).isFalse();
   }
 
   @Test
@@ -315,6 +401,18 @@ class OptionTest {
   }
 
   @Test
+  void orElseThrow_withSome_expectedValue() {
+    // Arrange
+    final var sut = Option.some("value");
+
+    // Act
+    final var result = sut.orElseThrow(() -> new IllegalStateException("missing"));
+
+    // Assert
+    softly.assertThat(result).isEqualTo("value");
+  }
+
+  @Test
   void peek_withSome_expectedConsumerInvocation() {
     // Arrange
     final var seen = new AtomicBoolean(false);
@@ -326,6 +424,20 @@ class OptionTest {
     // Assert
     softly.assertThat(result.get()).isEqualTo("a");
     softly.assertThat(seen).isTrue();
+  }
+
+  @Test
+  void peek_withNone_expectedNoInvocation() {
+    // Arrange
+    final var seen = new AtomicBoolean(false);
+    final var sut = Option.<String>none();
+
+    // Act
+    final var result = sut.peek(value -> seen.set(true));
+
+    // Assert
+    softly.assertThat(result.isEmpty()).isTrue();
+    softly.assertThat(seen).isFalse();
   }
 
   @Test
@@ -342,6 +454,19 @@ class OptionTest {
   }
 
   @Test
+  void ifPresent_withNone_expectedNoInvocation() {
+    // Arrange
+    final var seen = new AtomicBoolean(false);
+    final var sut = Option.<String>none();
+
+    // Act
+    sut.ifPresent(value -> seen.set(true));
+
+    // Assert
+    softly.assertThat(seen).isFalse();
+  }
+
+  @Test
   void ifPresentOrElse_withNone_expectedElseInvocation() {
     // Arrange
     final var seen = new AtomicBoolean(false);
@@ -349,6 +474,19 @@ class OptionTest {
 
     // Act
     sut.ifPresentOrElse(value -> seen.set(false), () -> seen.set(true));
+
+    // Assert
+    softly.assertThat(seen).isTrue();
+  }
+
+  @Test
+  void ifPresentOrElse_withSome_expectedPresentInvocation() {
+    // Arrange
+    final var seen = new AtomicBoolean(false);
+    final var sut = Option.some("value");
+
+    // Act
+    sut.ifPresentOrElse(value -> seen.set(true), () -> seen.set(false));
 
     // Assert
     softly.assertThat(seen).isTrue();
@@ -364,6 +502,18 @@ class OptionTest {
 
     // Assert
     softly.assertThat(result).isTrue();
+  }
+
+  @Test
+  void exists_withSomeFailingPredicate_expectedFalse() {
+    // Arrange
+    final var sut = Option.some(5);
+
+    // Act
+    final var result = sut.exists(value -> value > 10);
+
+    // Assert
+    softly.assertThat(result).isFalse();
   }
 
   @Test
@@ -400,6 +550,18 @@ class OptionTest {
 
     // Assert
     softly.assertThat(result).isTrue();
+  }
+
+  @Test
+  void forAll_withSomeFailingPredicate_expectedFalse() {
+    // Arrange
+    final var sut = Option.some(2);
+
+    // Act
+    final var result = sut.forAll(value -> value > 3);
+
+    // Assert
+    softly.assertThat(result).isFalse();
   }
 
   @Test
@@ -474,5 +636,66 @@ class OptionTest {
 
     // Assert
     softly.assertThat(result).isEmpty();
+  }
+
+  @Test
+  void contains_withNonMatchingValue_expectedFalse() {
+    // Arrange
+    final var sut = Option.some("value");
+
+    // Act
+    final var result = sut.contains("other");
+
+    // Assert
+    softly.assertThat(result).isFalse();
+  }
+
+  @Test
+  void toString_withSome_expectedFormat() {
+    // Arrange
+    final var sut = Option.some("value");
+
+    // Act
+    final var result = sut.toString();
+
+    // Assert
+    softly.assertThat(result).isEqualTo("Some(value)");
+  }
+
+  @Test
+  void toString_withNone_expectedValue() {
+    // Arrange
+    final var sut = Option.<String>none();
+
+    // Act
+    final var result = sut.toString();
+
+    // Assert
+    softly.assertThat(result).isEqualTo("None");
+  }
+
+  @Test
+  void noneEquality_expectedTrue() {
+    // Arrange
+    final var left = Option.<String>none();
+    final var right = Option.<Integer>none();
+
+    // Act
+    final var result = left.equals(right);
+
+    // Assert
+    softly.assertThat(result).isTrue();
+  }
+
+  @Test
+  void noneHashCode_expectedZero() {
+    // Arrange
+    final var sut = Option.<String>none();
+
+    // Act
+    final var result = sut.hashCode();
+
+    // Assert
+    softly.assertThat(result).isEqualTo(0);
   }
 }
