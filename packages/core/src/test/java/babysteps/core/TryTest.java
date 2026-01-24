@@ -315,6 +315,25 @@ class TryTest {
   }
 
   @Test
+  void recover_withFailureAndThrowingMapper_expectedFailure() {
+    // Arrange
+    final var sut = Try.failure(new IllegalStateException("boom"));
+
+    // Act
+    final var result =
+        sut.recover(
+            error -> {
+              throw new IllegalArgumentException("mapped");
+            });
+
+    // Assert
+    softly.assertThat(result.isFailure()).isTrue();
+    softly.assertThat(result.getCause())
+        .isInstanceOf(IllegalArgumentException.class)
+        .hasMessage("mapped");
+  }
+
+  @Test
   void recover_withSuccess_expectedSuccessAndMapperNotCalled() {
     // Arrange
     final var called = new AtomicBoolean(false);
@@ -343,6 +362,25 @@ class TryTest {
 
     // Assert
     softly.assertThat(result.get()).isEqualTo("recovered");
+  }
+
+  @Test
+  void recoverWith_withFailureAndThrowingMapper_expectedFailure() {
+    // Arrange
+    final var sut = Try.failure(new IllegalStateException("boom"));
+
+    // Act
+    final var result =
+        sut.recoverWith(
+            error -> {
+              throw new IllegalArgumentException("mapped");
+            });
+
+    // Assert
+    softly.assertThat(result.isFailure()).isTrue();
+    softly.assertThat(result.getCause())
+        .isInstanceOf(IllegalArgumentException.class)
+        .hasMessage("mapped");
   }
 
   @Test
