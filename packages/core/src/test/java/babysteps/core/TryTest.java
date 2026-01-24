@@ -216,7 +216,7 @@ class TryTest {
   void map_withFailure_expectedFailureAndMapperNotCalled() {
     // Arrange
     final var called = new AtomicBoolean(false);
-    final var sut = Try.failure(new IllegalStateException("boom"));
+    final var sut = Try.<String>failure(new IllegalStateException("boom"));
 
     // Act
     final var result =
@@ -267,7 +267,7 @@ class TryTest {
   void flatMap_withFailure_expectedFailureAndMapperNotCalled() {
     // Arrange
     final var called = new AtomicBoolean(false);
-    final var sut = Try.failure(new IllegalStateException("boom"));
+    final var sut = Try.<String>failure(new IllegalStateException("boom"));
 
     // Act
     final var result =
