@@ -16,7 +16,7 @@
 - [ ] Try
   - [x] Capture checked exceptions into Result-like model
 - [ ] Unit
-  - [ ] Singleton type to model void in FP pipelines
+  - [x] Singleton type to model void in FP pipelines
 
 ### fp
 - [ ] Functions
