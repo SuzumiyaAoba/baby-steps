@@ -177,6 +177,17 @@ class EitherTest {
   }
 
   @Test
+  void unwrapRightOr_withRight_expectedValue() {
+    // Arrange
+    final var sut = Either.<String, String>right("value");
+
+    // Act
+    final var result = sut.unwrapRightOr("fallback");
+
+    // Assert
+    softly.assertThat(result).isEqualTo("value");
+  }
+  @Test
   void unwrapRightOrElse_withRight_expectedValueAndSupplierNotCalled() {
     // Arrange
     final var called = new AtomicBoolean(false);
@@ -217,6 +228,18 @@ class EitherTest {
 
     // Assert
     softly.assertThat(result).isEqualTo("fallback");
+  }
+
+  @Test
+  void unwrapLeftOr_withLeft_expectedValue() {
+    // Arrange
+    final var sut = Either.<String, String>left("error");
+
+    // Act
+    final var result = sut.unwrapLeftOr("fallback");
+
+    // Assert
+    softly.assertThat(result).isEqualTo("error");
   }
 
   @Test
@@ -275,6 +298,18 @@ class EitherTest {
   }
 
   @Test
+  void orElse_withNullFallback_expectedException() {
+    // Arrange
+    final var sut = Either.<String, String>left("error");
+
+    // Act
+    final var action = (ThrowingCallable) () -> sut.orElse(null);
+
+    // Assert
+    softly.assertThatThrownBy(action).isInstanceOf(NullPointerException.class).hasMessage("fallback");
+  }
+
+  @Test
   void orElseGet_withRight_expectedValueAndSupplierNotCalled() {
     // Arrange
     final var called = new AtomicBoolean(false);
@@ -303,6 +338,18 @@ class EitherTest {
 
     // Assert
     softly.assertThat(result.unwrapRight()).isEqualTo("fallback");
+  }
+
+  @Test
+  void orElseGet_withLeftNullResult_expectedException() {
+    // Arrange
+    final var sut = Either.<String, String>left("error");
+
+    // Act
+    final var action = (ThrowingCallable) () -> sut.orElseGet(() -> null);
+
+    // Assert
+    softly.assertThatThrownBy(action).isInstanceOf(NullPointerException.class).hasMessage("result");
   }
 
   @Test
@@ -342,6 +389,16 @@ class EitherTest {
         .assertThatThrownBy(action)
         .isInstanceOf(NullPointerException.class)
         .hasMessage("exception");
+  }
+
+  @Test
+  void fromResult_withNull_expectedException() {
+    // Arrange
+    final var action = (ThrowingCallable) () -> Either.fromResult(null);
+
+    // Act
+    // Assert
+    softly.assertThatThrownBy(action).isInstanceOf(NullPointerException.class).hasMessage("result");
   }
 
   @Test
