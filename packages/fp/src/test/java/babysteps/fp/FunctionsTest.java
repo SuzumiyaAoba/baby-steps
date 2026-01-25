@@ -14,7 +14,8 @@ class FunctionsTest {
   @Test
   void compose_expectedApplyFunctions() {
     // Arrange
-    final var fn = Functions.compose((Integer value) -> value * 2, (String value) -> value.length());
+    final var fn =
+        Functions.compose((Integer value) -> value * 2, (String value) -> value.length());
 
     // Act
     final var result = fn.apply("abcd");

@@ -114,8 +114,7 @@ public sealed interface Try<T> permits Try.Success, Try.Failure {
    * @return mapped {@code Success} or {@code Failure}
    * @throws NullPointerException if {@code mapper} is {@code null}
    */
-  default <U> @NonNull Try<U> map(
-      @NonNull Function<? super @Nullable T, ? extends U> mapper) {
+  default <U> @NonNull Try<U> map(@NonNull Function<? super @Nullable T, ? extends U> mapper) {
     Objects.requireNonNull(mapper, "mapper");
     if (isFailure()) {
       return failure(getCause());
