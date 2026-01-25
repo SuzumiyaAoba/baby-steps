@@ -128,7 +128,8 @@ public sealed interface Result<T, E> permits Result.Ok, Result.Err {
       @NonNull Supplier<? extends X> exceptionSupplier) throws X {
     Objects.requireNonNull(exceptionSupplier, "exceptionSupplier");
     if (isErr()) {
-      throw exceptionSupplier.get();
+      final var exception = Objects.requireNonNull(exceptionSupplier.get(), "exception");
+      throw exception;
     }
     return unwrap();
   }
