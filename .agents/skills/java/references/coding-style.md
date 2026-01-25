@@ -17,3 +17,4 @@
     }
     ```
 - Do not reassign variables.
+- Write detailed Javadoc.
