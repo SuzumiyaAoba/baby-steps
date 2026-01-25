@@ -61,7 +61,7 @@ class FunctionsTest {
   }
 
   @Test
-  void memoize_withFunction_expectedCacheByInput() {
+  void memoize_withFunction_repeatedInput_expectedSingleEvaluation() {
     // Arrange
     final var calls = new AtomicInteger(0);
     final var fn =
@@ -73,18 +73,56 @@ class FunctionsTest {
 
     // Act
     final var first = fn.apply("value");
-    final var second = fn.apply("value");
-    final var third = fn.apply("other");
 
     // Assert
     softly.assertThat(first).isEqualTo(5);
-    softly.assertThat(second).isEqualTo(5);
-    softly.assertThat(third).isEqualTo(5);
+    softly.assertThat(calls.get()).isEqualTo(1);
+  }
+
+  @Test
+  void memoize_withFunction_sameInputAgain_expectedCachedValue() {
+    // Arrange
+    final var calls = new AtomicInteger(0);
+    final var fn =
+        Functions.memoize(
+            (String value) -> {
+              calls.incrementAndGet();
+              return value.length();
+            });
+
+    fn.apply("value");
+
+    // Act
+    final var result = fn.apply("value");
+
+    // Assert
+    softly.assertThat(result).isEqualTo(5);
+    softly.assertThat(calls.get()).isEqualTo(1);
+  }
+
+  @Test
+  void memoize_withFunction_differentInput_expectedNewEvaluation() {
+    // Arrange
+    final var calls = new AtomicInteger(0);
+    final var fn =
+        Functions.memoize(
+            (String value) -> {
+              calls.incrementAndGet();
+              return value.length();
+            });
+
+    fn.apply("value");
+
+    // Act
+    final var result = fn.apply("other");
+
+    // Assert
+    softly.assertThat(result).isEqualTo(5);
     softly.assertThat(calls.get()).isEqualTo(2);
   }
 
   @Test
-  void memoize_withBiFunction_expectedCacheByTuple() {
+  void memoize_withBiFunction_repeatedInput_expectedSingleEvaluation() {
     // Arrange
     final var calls = new AtomicInteger(0);
     final var fn =
@@ -96,13 +134,51 @@ class FunctionsTest {
 
     // Act
     final var first = fn.apply("a", "b");
-    final var second = fn.apply("a", "b");
-    final var third = fn.apply("a", "c");
 
     // Assert
     softly.assertThat(first).isEqualTo("ab");
-    softly.assertThat(second).isEqualTo("ab");
-    softly.assertThat(third).isEqualTo("ac");
+    softly.assertThat(calls.get()).isEqualTo(1);
+  }
+
+  @Test
+  void memoize_withBiFunction_sameInputAgain_expectedCachedValue() {
+    // Arrange
+    final var calls = new AtomicInteger(0);
+    final var fn =
+        Functions.memoize(
+            (String left, String right) -> {
+              calls.incrementAndGet();
+              return left + right;
+            });
+
+    fn.apply("a", "b");
+
+    // Act
+    final var result = fn.apply("a", "b");
+
+    // Assert
+    softly.assertThat(result).isEqualTo("ab");
+    softly.assertThat(calls.get()).isEqualTo(1);
+  }
+
+  @Test
+  void memoize_withBiFunction_differentInput_expectedNewEvaluation() {
+    // Arrange
+    final var calls = new AtomicInteger(0);
+    final var fn =
+        Functions.memoize(
+            (String left, String right) -> {
+              calls.incrementAndGet();
+              return left + right;
+            });
+
+    fn.apply("a", "b");
+
+    // Act
+    final var result = fn.apply("a", "c");
+
+    // Assert
+    softly.assertThat(result).isEqualTo("ac");
     softly.assertThat(calls.get()).isEqualTo(2);
   }
 }
