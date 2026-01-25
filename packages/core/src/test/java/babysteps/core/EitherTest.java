@@ -426,6 +426,19 @@ class EitherTest {
   }
 
   @Test
+  @SuppressWarnings("ConstantConditions")
+  void map_withNullMapper_expectedException() {
+    // Arrange
+    final var sut = Either.<String, String>right("value");
+
+    // Act
+    final var action = (ThrowingCallable) () -> sut.map(null);
+
+    // Assert
+    softly.assertThatThrownBy(action).isInstanceOf(NullPointerException.class).hasMessage("mapper");
+  }
+
+  @Test
   void mapBoth_withRight_expectedMappedRight() {
     // Arrange
     final var sut = Either.<String, String>right("value");
@@ -447,6 +460,22 @@ class EitherTest {
 
     // Assert
     softly.assertThat(result.unwrapLeft()).isEqualTo("error?");
+  }
+
+  @Test
+  @SuppressWarnings("ConstantConditions")
+  void mapBoth_withNullLeftMapper_expectedException() {
+    // Arrange
+    final var sut = Either.<String, String>left("error");
+
+    // Act
+    final var action = (ThrowingCallable) () -> sut.mapBoth(null, value -> value);
+
+    // Assert
+    softly
+        .assertThatThrownBy(action)
+        .isInstanceOf(NullPointerException.class)
+        .hasMessage("leftMapper");
   }
 
   @Test
@@ -474,6 +503,19 @@ class EitherTest {
   }
 
   @Test
+  @SuppressWarnings("ConstantConditions")
+  void flatMap_withNullMapper_expectedException() {
+    // Arrange
+    final var sut = Either.<String, String>right("value");
+
+    // Act
+    final var action = (ThrowingCallable) () -> sut.flatMap(null);
+
+    // Assert
+    softly.assertThatThrownBy(action).isInstanceOf(NullPointerException.class).hasMessage("mapper");
+  }
+
+  @Test
   void mapLeft_withLeft_expectedMappedLeft() {
     // Arrange
     final var sut = Either.<String, String>left("error");
@@ -498,6 +540,19 @@ class EitherTest {
   }
 
   @Test
+  @SuppressWarnings("ConstantConditions")
+  void mapLeft_withNullMapper_expectedException() {
+    // Arrange
+    final var sut = Either.<String, String>left("error");
+
+    // Act
+    final var action = (ThrowingCallable) () -> sut.mapLeft(null);
+
+    // Assert
+    softly.assertThatThrownBy(action).isInstanceOf(NullPointerException.class).hasMessage("mapper");
+  }
+
+  @Test
   void flatMapLeft_withLeft_expectedMappedLeft() {
     // Arrange
     final var sut = Either.<String, String>left("error");
@@ -519,6 +574,19 @@ class EitherTest {
 
     // Assert
     softly.assertThat(result.unwrapRight()).isEqualTo("value");
+  }
+
+  @Test
+  @SuppressWarnings("ConstantConditions")
+  void flatMapLeft_withNullMapper_expectedException() {
+    // Arrange
+    final var sut = Either.<String, String>left("error");
+
+    // Act
+    final var action = (ThrowingCallable) () -> sut.flatMapLeft(null);
+
+    // Assert
+    softly.assertThatThrownBy(action).isInstanceOf(NullPointerException.class).hasMessage("mapper");
   }
 
   @Test
