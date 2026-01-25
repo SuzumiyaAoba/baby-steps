@@ -1325,6 +1325,19 @@ class ResultTest {
   }
 
   @Test
+  void combine_withOtherErr_expectedErr() {
+    // Arrange
+    final var sut = Result.<String, String>ok("a");
+    final var other = Result.<String, String>err("other");
+
+    // Act
+    final var result = sut.combine(other, (left, right) -> left + right);
+
+    // Assert
+    softly.assertThat(result.unwrapErr()).isEqualTo("other");
+  }
+
+  @Test
   void contains_withOkNonMatching_expectedFalse() {
     // Arrange
     final var sut = Result.<String, String>ok("value");
