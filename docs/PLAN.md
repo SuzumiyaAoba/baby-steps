@@ -23,7 +23,7 @@
   - [x] compose/pipe/curry
   - [x] tupled/untupled, flip, partial, memoize
 - [ ] Predicates
-  - [ ] and/or/not combinators
+  - [x] and/or/not combinators
 - [ ] Consumers
   - [ ] tee/tap for side effects without breaking chains
 
