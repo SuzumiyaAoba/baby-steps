@@ -14,10 +14,9 @@ import org.jspecify.annotations.Nullable;
 /**
  * Optional value container inspired by functional programming (Maybe/Option).
  *
- * <p>Technical background: Option models the presence or absence of a value without using {@code
- * null}. This makes absence explicit in the type system and enables safe composition through {@link
- * #map(Function)} and {@link #flatMap(Function)}. The API favors total functions and encourages
- * handling of empty cases at the boundary.
+ * <p>Technical background: Option models the presence or absence of a value. {@link Some} may hold
+ * {@code null} values, while {@link #ofNullable(Object)} maps {@code null} to {@link None}. The API
+ * favors total functions and encourages handling of empty cases at the boundary.
  *
  * <p>The design is intentionally small and predictable:
  *
@@ -55,15 +54,15 @@ import org.jspecify.annotations.Nullable;
  */
 public sealed interface Option<T> permits Option.Some, Option.None {
   /**
-   * Create a {@link Some} containing a non-null value.
+   * Create a {@link Some} containing a value.
    *
-   * @param value value to wrap (must be non-null)
+   * @param value value to wrap, possibly {@code null}
    * @param <T> value type
    * @return Option with a present value
    * @throws NullPointerException when {@code value} is null
    */
-  static <T> Option<T> some(@NonNull T value) {
-    return new Some<>(Objects.requireNonNull(value, "value"));
+  static <T> @NonNull Option<T> some(@Nullable T value) {
+    return new Some<>(value);
   }
 
   /**
@@ -72,7 +71,7 @@ public sealed interface Option<T> permits Option.Some, Option.None {
    * @param <T> value type
    * @return empty Option
    */
-  static <T> Option<T> none() {
+  static <T> @NonNull Option<T> none() {
     return None.instance();
   }
 
@@ -83,7 +82,7 @@ public sealed interface Option<T> permits Option.Some, Option.None {
    * @param <T> value type
    * @return Option of value
    */
-  static <T> Option<T> ofNullable(@Nullable T value) {
+  static <T> @NonNull Option<T> ofNullable(@Nullable T value) {
     return value == null ? none() : some(value);
   }
 
@@ -95,7 +94,7 @@ public sealed interface Option<T> permits Option.Some, Option.None {
    * @return Option of optional
    */
   @SuppressWarnings("OptionalUsedAsFieldOrParameterType")
-  static <T> Option<T> fromOptional(@NonNull Optional<T> optional) {
+  static <T> @NonNull Option<T> fromOptional(@NonNull Optional<T> optional) {
     final var nonNullOptional = Objects.requireNonNull(optional, "optional");
     return nonNullOptional.map(Option::some).orElseGet(Option::none);
   }
@@ -115,10 +114,10 @@ public sealed interface Option<T> permits Option.Some, Option.None {
   /**
    * Get the value or throw if empty.
    *
-   * @return present value
+   * @return present value, possibly {@code null}
    * @throws NoSuchElementException when empty
    */
-  @NonNull T get();
+  @Nullable T get();
 
   /**
    * Get the value or a fallback when empty.
@@ -136,7 +135,7 @@ public sealed interface Option<T> permits Option.Some, Option.None {
    * @param supplier supplier for fallback value
    * @return present value or supplied fallback
    */
-  default @Nullable T getOrElseGet(@NonNull Supplier<? extends T> supplier) {
+  default @Nullable T getOrElseGet(@NonNull Supplier<? extends @Nullable T> supplier) {
     Objects.requireNonNull(supplier, "supplier");
     return isPresent() ? get() : supplier.get();
   }
@@ -147,7 +146,7 @@ public sealed interface Option<T> permits Option.Some, Option.None {
    * @param fallback alternative Option
    * @return this or fallback
    */
-  default Option<T> orElse(@NonNull Option<? extends T> fallback) {
+  default @NonNull Option<T> orElse(@NonNull Option<? extends T> fallback) {
     Objects.requireNonNull(fallback, "fallback");
     if (isPresent()) {
       return this;
@@ -163,7 +162,7 @@ public sealed interface Option<T> permits Option.Some, Option.None {
    * @param supplier supplier for alternative Option
    * @return this or supplied fallback
    */
-  default Option<T> orElseGet(@NonNull Supplier<? extends Option<? extends T>> supplier) {
+  default @NonNull Option<T> orElseGet(@NonNull Supplier<? extends Option<? extends T>> supplier) {
     Objects.requireNonNull(supplier, "supplier");
     if (isPresent()) {
       return this;
@@ -174,6 +173,17 @@ public sealed interface Option<T> permits Option.Some, Option.None {
   }
 
   /**
+   * Return this Option when present, otherwise use a supplier for the fallback.
+   *
+   * @param supplier supplier for alternative Option
+   * @return this or supplied fallback
+   * @throws NullPointerException if {@code supplier} or its result is {@code null}
+   */
+  default @NonNull Option<T> or(@NonNull Supplier<? extends Option<? extends T>> supplier) {
+    return orElseGet(supplier);
+  }
+
+  /**
    * Return the value when present or throw a supplied exception when empty.
    *
    * @param exceptionSupplier supplier for exception
@@ -181,13 +191,23 @@ public sealed interface Option<T> permits Option.Some, Option.None {
    * @return present value
    * @throws X when empty
    */
-  default <X extends Throwable> @NonNull T orElseThrow(
+  default <X extends Throwable> @Nullable T orElseThrow(
       @NonNull Supplier<? extends X> exceptionSupplier) throws X {
     Objects.requireNonNull(exceptionSupplier, "exceptionSupplier");
     if (isPresent()) {
       return get();
     }
     throw exceptionSupplier.get();
+  }
+
+  /**
+   * Return the value when present or throw {@link NoSuchElementException} when empty.
+   *
+   * @return present value
+   * @throws NoSuchElementException when empty
+   */
+  default @Nullable T orElseThrow() {
+    return get();
   }
 
   /**
@@ -199,7 +219,8 @@ public sealed interface Option<T> permits Option.Some, Option.None {
    * @return result of the chosen handler
    */
   default <U> @Nullable U fold(
-      @NonNull Supplier<? extends U> ifEmpty, @NonNull Function<? super T, ? extends U> ifPresent) {
+      @NonNull Supplier<? extends U> ifEmpty,
+      @NonNull Function<? super @Nullable T, ? extends U> ifPresent) {
     Objects.requireNonNull(ifEmpty, "ifEmpty");
     Objects.requireNonNull(ifPresent, "ifPresent");
     return isPresent() ? ifPresent.apply(get()) : ifEmpty.get();
@@ -211,7 +232,7 @@ public sealed interface Option<T> permits Option.Some, Option.None {
    * @param predicate predicate to test
    * @return filtered Option
    */
-  default Option<T> filter(@NonNull Predicate<? super T> predicate) {
+  default @NonNull Option<T> filter(@NonNull Predicate<? super @Nullable T> predicate) {
     Objects.requireNonNull(predicate, "predicate");
     if (isEmpty()) {
       return this;
@@ -225,7 +246,7 @@ public sealed interface Option<T> permits Option.Some, Option.None {
    * @param predicate predicate to test
    * @return filtered Option
    */
-  default Option<T> filterNot(@NonNull Predicate<? super T> predicate) {
+  default @NonNull Option<T> filterNot(@NonNull Predicate<? super @Nullable T> predicate) {
     Objects.requireNonNull(predicate, "predicate");
     return filter(predicate.negate());
   }
@@ -237,12 +258,43 @@ public sealed interface Option<T> permits Option.Some, Option.None {
    * @param <U> result type
    * @return mapped Option
    */
-  default <U> Option<U> map(@NonNull Function<? super T, ? extends U> mapper) {
+  default <U> @NonNull Option<U> map(@NonNull Function<? super @Nullable T, ? extends U> mapper) {
     Objects.requireNonNull(mapper, "mapper");
     if (isEmpty()) {
       return none();
     }
     return Option.ofNullable(mapper.apply(get()));
+  }
+
+  /**
+   * Map the value or return a fallback when empty.
+   *
+   * @param mapper mapping function
+   * @param fallback fallback value
+   * @param <U> mapped value type
+   * @return mapped value or fallback
+   * @throws NullPointerException if {@code mapper} is {@code null}
+   */
+  default <U> @Nullable U mapOr(
+      @Nullable U fallback, @NonNull Function<? super T, ? extends U> mapper) {
+    Objects.requireNonNull(mapper, "mapper");
+    return isPresent() ? mapper.apply(get()) : fallback;
+  }
+
+  /**
+   * Map the value or return a supplied fallback when empty.
+   *
+   * @param mapper mapping function
+   * @param fallback supplier for fallback value
+   * @param <U> mapped value type
+   * @return mapped value or supplied fallback
+   * @throws NullPointerException if {@code mapper} or {@code fallback} is {@code null}
+   */
+  default <U> @Nullable U mapOrElse(
+      @NonNull Supplier<? extends U> fallback, @NonNull Function<? super T, ? extends U> mapper) {
+    Objects.requireNonNull(fallback, "fallback");
+    Objects.requireNonNull(mapper, "mapper");
+    return isPresent() ? mapper.apply(get()) : fallback.get();
   }
 
   /**
@@ -252,8 +304,8 @@ public sealed interface Option<T> permits Option.Some, Option.None {
    * @param <U> result type
    * @return mapped Option
    */
-  default <U> Option<U> flatMap(
-      @NonNull Function<? super T, ? extends Option<? extends U>> mapper) {
+  default <U> @NonNull Option<U> flatMap(
+      @NonNull Function<? super @Nullable T, ? extends Option<? extends U>> mapper) {
     Objects.requireNonNull(mapper, "mapper");
     if (isEmpty()) {
       return none();
@@ -269,7 +321,7 @@ public sealed interface Option<T> permits Option.Some, Option.None {
    * @param action action to perform
    * @return this Option
    */
-  default Option<T> peek(@NonNull Consumer<? super T> action) {
+  default @NonNull Option<T> peek(@NonNull Consumer<? super @Nullable T> action) {
     Objects.requireNonNull(action, "action");
     if (isPresent()) {
       action.accept(get());
@@ -282,7 +334,7 @@ public sealed interface Option<T> permits Option.Some, Option.None {
    *
    * @param action action to perform
    */
-  default void ifPresent(@NonNull Consumer<? super T> action) {
+  default void ifPresent(@NonNull Consumer<? super @Nullable T> action) {
     Objects.requireNonNull(action, "action");
     if (isPresent()) {
       action.accept(get());
@@ -295,7 +347,8 @@ public sealed interface Option<T> permits Option.Some, Option.None {
    * @param action action to perform when present
    * @param emptyAction action to perform when empty
    */
-  default void ifPresentOrElse(@NonNull Consumer<? super T> action, @NonNull Runnable emptyAction) {
+  default void ifPresentOrElse(
+      @NonNull Consumer<? super @Nullable T> action, @NonNull Runnable emptyAction) {
     Objects.requireNonNull(action, "action");
     Objects.requireNonNull(emptyAction, "emptyAction");
     if (isPresent()) {
@@ -311,7 +364,7 @@ public sealed interface Option<T> permits Option.Some, Option.None {
    * @param predicate predicate to test
    * @return true when present and predicate matches
    */
-  default boolean exists(@NonNull Predicate<? super T> predicate) {
+  default boolean exists(@NonNull Predicate<? super @Nullable T> predicate) {
     Objects.requireNonNull(predicate, "predicate");
     return isPresent() && predicate.test(get());
   }
@@ -322,7 +375,7 @@ public sealed interface Option<T> permits Option.Some, Option.None {
    * @param predicate predicate to test
    * @return true when empty or predicate matches
    */
-  default boolean forAll(@NonNull Predicate<? super T> predicate) {
+  default boolean forAll(@NonNull Predicate<? super @Nullable T> predicate) {
     Objects.requireNonNull(predicate, "predicate");
     return isEmpty() || predicate.test(get());
   }
@@ -342,7 +395,7 @@ public sealed interface Option<T> permits Option.Some, Option.None {
    * @param <E> error type
    * @return Result wrapping the value or error
    */
-  default <E> Result<T, E> toResult(@NonNull Supplier<? extends E> ifEmpty) {
+  default <E> @NonNull Result<T, E> toResult(@NonNull Supplier<? extends E> ifEmpty) {
     Objects.requireNonNull(ifEmpty, "ifEmpty");
     return isPresent() ? Result.ok(get()) : Result.err(ifEmpty.get());
   }
@@ -352,28 +405,39 @@ public sealed interface Option<T> permits Option.Some, Option.None {
    *
    * @return Stream of the value when present
    */
-  default Stream<T> stream() {
+  default @NonNull Stream<T> stream() {
     return isPresent() ? Stream.of(get()) : Stream.empty();
   }
 
   /**
    * Convert to {@link Optional} for interop with standard APIs.
    *
+   * <p>{@link Some} holding {@code null} is converted to {@link Optional#empty()}.
+   *
    * @return Optional view
    */
-  default Optional<T> toOptional() {
-    return isPresent() ? Optional.of(get()) : Optional.empty();
+  default @NonNull Optional<T> toOptional() {
+    return isPresent() ? Optional.ofNullable(get()) : Optional.empty();
+  }
+
+  /**
+   * Convert {@code Some(null)} to {@link None}; keeps other values unchanged.
+   *
+   * @return {@code None} when this is {@code Some(null)}, otherwise this Option
+   */
+  default @NonNull Option<T> normalize() {
+    if (isPresent() && get() == null) {
+      return none();
+    }
+    return this;
   }
 
   /**
    * Present case.
    *
-   * @param <T> value type
+   * @param <T> value type, possibly nullable
    */
-  record Some<T>(@NonNull T value) implements Option<T> {
-    public Some {
-      Objects.requireNonNull(value, "value");
-    }
+  record Some<T>(@Nullable T value) implements Option<T> {
 
     @Override
     public boolean isPresent() {
@@ -381,7 +445,7 @@ public sealed interface Option<T> permits Option.Some, Option.None {
     }
 
     @Override
-    public @NonNull T get() {
+    public @Nullable T get() {
       return value;
     }
 

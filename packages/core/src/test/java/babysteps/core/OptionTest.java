@@ -132,6 +132,20 @@ class OptionTest {
   }
 
   @Test
+  @SuppressWarnings("ConstantConditions")
+  void some_withNull_expectedSomeWithNull() {
+    // Arrange
+    final var sut = Option.some(null);
+
+    // Act
+    final var result = sut.get();
+
+    // Assert
+    softly.assertThat(sut.isPresent()).isTrue();
+    softly.assertThat(result).isNull();
+  }
+
+  @Test
   void fromOptional_withValue_expectedSome() {
     // Arrange
     final var value = Optional.of("opt");
@@ -362,6 +376,37 @@ class OptionTest {
   }
 
   @Test
+  void or_withNone_expectedFallback() {
+    // Arrange
+    final var sut = Option.<String>none();
+
+    // Act
+    final var result = sut.or(() -> Option.some("fallback"));
+
+    // Assert
+    softly.assertThat(result.get()).isEqualTo("fallback");
+  }
+
+  @Test
+  void or_withSome_expectedOriginalAndSupplierNotCalled() {
+    // Arrange
+    final var called = new AtomicBoolean(false);
+    final var sut = Option.some("value");
+
+    // Act
+    final var result =
+        sut.or(
+            () -> {
+              called.set(true);
+              return Option.some("fallback");
+            });
+
+    // Assert
+    softly.assertThat(result.get()).isEqualTo("value");
+    softly.assertThat(called).isFalse();
+  }
+
+  @Test
   void fold_withNone_expectedEmptyValue() {
     // Arrange
     final var sut = Option.<String>none();
@@ -402,15 +447,48 @@ class OptionTest {
   }
 
   @Test
+  void orElseThrow_withSome_expectedValueAndSupplierNotCalled() {
+    // Arrange
+    final var called = new AtomicBoolean(false);
+    final var sut = Option.some("value");
+
+    // Act
+    final var result =
+        sut.orElseThrow(
+            () -> {
+              called.set(true);
+              return new IllegalStateException("missing");
+            });
+
+    // Assert
+    softly.assertThat(result).isEqualTo("value");
+    softly.assertThat(called).isFalse();
+  }
+
+  @Test
   void orElseThrow_withSome_expectedValue() {
     // Arrange
     final var sut = Option.some("value");
 
     // Act
-    final var result = sut.orElseThrow(() -> new IllegalStateException("missing"));
+    final var result = sut.orElseThrow();
 
     // Assert
     softly.assertThat(result).isEqualTo("value");
+  }
+
+  @Test
+  void orElseThrow_withNone_expectedNoSuchElementException() {
+    // Arrange
+    final var sut = Option.<String>none();
+
+    // Act
+    final var action = (ThrowingCallable) sut::orElseThrow;
+
+    // Assert
+    softly.assertThatThrownBy(action)
+        .isInstanceOf(NoSuchElementException.class)
+        .hasMessage("Option is empty");
   }
 
   @Test
@@ -637,6 +715,389 @@ class OptionTest {
 
     // Assert
     softly.assertThat(result).isEmpty();
+  }
+
+  @Test
+  @SuppressWarnings("ConstantConditions")
+  void normalize_withSomeNull_expectedNone() {
+    // Arrange
+    final var sut = Option.some(null);
+
+    // Act
+    final var result = sut.normalize();
+
+    // Assert
+    softly.assertThat(result.isEmpty()).isTrue();
+  }
+
+  @Test
+  void normalize_withSomeValue_expectedSame() {
+    // Arrange
+    final var sut = Option.some("value");
+
+    // Act
+    final var result = sut.normalize();
+
+    // Assert
+    softly.assertThat(result).isSameAs(sut);
+  }
+
+  @Test
+  void normalize_withNone_expectedSame() {
+    // Arrange
+    final var sut = Option.<String>none();
+
+    // Act
+    final var result = sut.normalize();
+
+    // Assert
+    softly.assertThat(result).isSameAs(sut);
+  }
+
+  @Test
+  void mapOr_withSome_expectedMappedValue() {
+    // Arrange
+    final var sut = Option.some("value");
+
+    // Act
+    final var result = sut.mapOr(0, String::length);
+
+    // Assert
+    softly.assertThat(result).isEqualTo(5);
+  }
+
+  @Test
+  void mapOr_withNone_expectedFallback() {
+    // Arrange
+    final var sut = Option.<String>none();
+
+    // Act
+    final var result = sut.mapOr(0, String::length);
+
+    // Assert
+    softly.assertThat(result).isEqualTo(0);
+  }
+
+  @Test
+  void mapOrElse_withSome_expectedMappedValue() {
+    // Arrange
+    final var called = new AtomicBoolean(false);
+    final var sut = Option.some("value");
+
+    // Act
+    final var result =
+        sut.mapOrElse(
+            () -> {
+              called.set(true);
+              return 0;
+            },
+            String::length);
+
+    // Assert
+    softly.assertThat(result).isEqualTo(5);
+    softly.assertThat(called).isFalse();
+  }
+
+  @Test
+  void mapOrElse_withNone_expectedFallback() {
+    // Arrange
+    final var called = new AtomicBoolean(false);
+    final var sut = Option.<String>none();
+
+    // Act
+    final var result =
+        sut.mapOrElse(
+            () -> {
+              called.set(true);
+              return 0;
+            },
+            String::length);
+
+    // Assert
+    softly.assertThat(result).isEqualTo(0);
+    softly.assertThat(called).isTrue();
+  }
+
+  @Test
+  @SuppressWarnings("ConstantConditions")
+  void fromOptional_withNull_expectedException() {
+    // Arrange
+    // Act
+    final var action = (ThrowingCallable) () -> Option.fromOptional(null);
+
+    // Assert
+    softly.assertThatThrownBy(action)
+        .isInstanceOf(NullPointerException.class)
+        .hasMessage("optional");
+  }
+
+  @Test
+  @SuppressWarnings("ConstantConditions")
+  void getOrElseGet_withNullSupplier_expectedException() {
+    // Arrange
+    final var sut = Option.<String>none();
+
+    // Act
+    final var action = (ThrowingCallable) () -> sut.getOrElseGet(null);
+
+    // Assert
+    softly.assertThatThrownBy(action)
+        .isInstanceOf(NullPointerException.class)
+        .hasMessage("supplier");
+  }
+
+  @Test
+  @SuppressWarnings("ConstantConditions")
+  void orElse_withNull_expectedException() {
+    // Arrange
+    final var sut = Option.<String>none();
+
+    // Act
+    final var action = (ThrowingCallable) () -> sut.orElse(null);
+
+    // Assert
+    softly.assertThatThrownBy(action)
+        .isInstanceOf(NullPointerException.class)
+        .hasMessage("fallback");
+  }
+
+  @Test
+  @SuppressWarnings("ConstantConditions")
+  void orElseGet_withNullSupplier_expectedException() {
+    // Arrange
+    final var sut = Option.<String>none();
+
+    // Act
+    final var action = (ThrowingCallable) () -> sut.orElseGet(null);
+
+    // Assert
+    softly.assertThatThrownBy(action)
+        .isInstanceOf(NullPointerException.class)
+        .hasMessage("supplier");
+  }
+
+  @Test
+  @SuppressWarnings("ConstantConditions")
+  void orElseThrow_withNullSupplier_expectedException() {
+    // Arrange
+    final var sut = Option.<String>none();
+
+    // Act
+    final var action = (ThrowingCallable) () -> sut.orElseThrow(null);
+
+    // Assert
+    softly.assertThatThrownBy(action)
+        .isInstanceOf(NullPointerException.class)
+        .hasMessage("exceptionSupplier");
+  }
+
+  @Test
+  @SuppressWarnings("ConstantConditions")
+  void fold_withNullIfEmpty_expectedException() {
+    // Arrange
+    final var sut = Option.<String>none();
+
+    // Act
+    final var action = (ThrowingCallable) () -> sut.fold(null, value -> value);
+
+    // Assert
+    softly.assertThatThrownBy(action)
+        .isInstanceOf(NullPointerException.class)
+        .hasMessage("ifEmpty");
+  }
+
+  @Test
+  @SuppressWarnings("ConstantConditions")
+  void fold_withNullIfPresent_expectedException() {
+    // Arrange
+    final var sut = Option.some("value");
+
+    // Act
+    final var action = (ThrowingCallable) () -> sut.fold(() -> "empty", null);
+
+    // Assert
+    softly.assertThatThrownBy(action)
+        .isInstanceOf(NullPointerException.class)
+        .hasMessage("ifPresent");
+  }
+
+  @Test
+  @SuppressWarnings("ConstantConditions")
+  void filter_withNullPredicate_expectedException() {
+    // Arrange
+    final var sut = Option.some("value");
+
+    // Act
+    final var action = (ThrowingCallable) () -> sut.filter(null);
+
+    // Assert
+    softly.assertThatThrownBy(action)
+        .isInstanceOf(NullPointerException.class)
+        .hasMessage("predicate");
+  }
+
+  @Test
+  @SuppressWarnings("ConstantConditions")
+  void filterNot_withNullPredicate_expectedException() {
+    // Arrange
+    final var sut = Option.some("value");
+
+    // Act
+    final var action = (ThrowingCallable) () -> sut.filterNot(null);
+
+    // Assert
+    softly.assertThatThrownBy(action)
+        .isInstanceOf(NullPointerException.class)
+        .hasMessage("predicate");
+  }
+
+  @Test
+  @SuppressWarnings("ConstantConditions")
+  void map_withNullMapper_expectedException() {
+    // Arrange
+    final var sut = Option.some("value");
+
+    // Act
+    final var action = (ThrowingCallable) () -> sut.map(null);
+
+    // Assert
+    softly.assertThatThrownBy(action)
+        .isInstanceOf(NullPointerException.class)
+        .hasMessage("mapper");
+  }
+
+  @Test
+  @SuppressWarnings("ConstantConditions")
+  void flatMap_withNullMapper_expectedException() {
+    // Arrange
+    final var sut = Option.some("value");
+
+    // Act
+    final var action = (ThrowingCallable) () -> sut.flatMap(null);
+
+    // Assert
+    softly.assertThatThrownBy(action)
+        .isInstanceOf(NullPointerException.class)
+        .hasMessage("mapper");
+  }
+
+  @Test
+  void flatMap_withNullMapped_expectedException() {
+    // Arrange
+    final var sut = Option.some("value");
+
+    // Act
+    final var action = (ThrowingCallable) () -> sut.flatMap(value -> null);
+
+    // Assert
+    softly.assertThatThrownBy(action)
+        .isInstanceOf(NullPointerException.class)
+        .hasMessage("mapped");
+  }
+
+  @Test
+  @SuppressWarnings("ConstantConditions")
+  void peek_withNullAction_expectedException() {
+    // Arrange
+    final var sut = Option.some("value");
+
+    // Act
+    final var action = (ThrowingCallable) () -> sut.peek(null);
+
+    // Assert
+    softly.assertThatThrownBy(action)
+        .isInstanceOf(NullPointerException.class)
+        .hasMessage("action");
+  }
+
+  @Test
+  @SuppressWarnings("ConstantConditions")
+  void ifPresent_withNullAction_expectedException() {
+    // Arrange
+    final var sut = Option.some("value");
+
+    // Act
+    final var action = (ThrowingCallable) () -> sut.ifPresent(null);
+
+    // Assert
+    softly.assertThatThrownBy(action)
+        .isInstanceOf(NullPointerException.class)
+        .hasMessage("action");
+  }
+
+  @Test
+  @SuppressWarnings("ConstantConditions")
+  void ifPresentOrElse_withNullAction_expectedException() {
+    // Arrange
+    final var sut = Option.some("value");
+
+    // Act
+    final var action = (ThrowingCallable) () -> sut.ifPresentOrElse(null, () -> {});
+
+    // Assert
+    softly.assertThatThrownBy(action)
+        .isInstanceOf(NullPointerException.class)
+        .hasMessage("action");
+  }
+
+  @Test
+  @SuppressWarnings("ConstantConditions")
+  void ifPresentOrElse_withNullEmptyAction_expectedException() {
+    // Arrange
+    final var sut = Option.some("value");
+
+    // Act
+    final var action = (ThrowingCallable) () -> sut.ifPresentOrElse(value -> {}, null);
+
+    // Assert
+    softly.assertThatThrownBy(action)
+        .isInstanceOf(NullPointerException.class)
+        .hasMessage("emptyAction");
+  }
+
+  @Test
+  @SuppressWarnings("ConstantConditions")
+  void exists_withNullPredicate_expectedException() {
+    // Arrange
+    final var sut = Option.some("value");
+
+    // Act
+    final var action = (ThrowingCallable) () -> sut.exists(null);
+
+    // Assert
+    softly.assertThatThrownBy(action)
+        .isInstanceOf(NullPointerException.class)
+        .hasMessage("predicate");
+  }
+
+  @Test
+  @SuppressWarnings("ConstantConditions")
+  void forAll_withNullPredicate_expectedException() {
+    // Arrange
+    final var sut = Option.some("value");
+
+    // Act
+    final var action = (ThrowingCallable) () -> sut.forAll(null);
+
+    // Assert
+    softly.assertThatThrownBy(action)
+        .isInstanceOf(NullPointerException.class)
+        .hasMessage("predicate");
+  }
+
+  @Test
+  @SuppressWarnings("ConstantConditions")
+  void toResult_withNullSupplier_expectedException() {
+    // Arrange
+    final var sut = Option.<String>none();
+
+    // Act
+    final var action = (ThrowingCallable) () -> sut.toResult(null);
+
+    // Assert
+    softly.assertThatThrownBy(action)
+        .isInstanceOf(NullPointerException.class)
+        .hasMessage("ifEmpty");
   }
 
   @Test
