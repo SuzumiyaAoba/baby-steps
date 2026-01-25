@@ -12,6 +12,42 @@ class FunctionsTest {
   @InjectSoftAssertions private SoftAssertions softly;
 
   @Test
+  void compose_expectedApplyFunctions() {
+    // Arrange
+    final var fn = Functions.compose((Integer value) -> value * 2, (String value) -> value.length());
+
+    // Act
+    final var result = fn.apply("abcd");
+
+    // Assert
+    softly.assertThat(result).isEqualTo(8);
+  }
+
+  @Test
+  void pipe_expectedApplyFunctions() {
+    // Arrange
+    final var fn = Functions.pipe((String value) -> value.length(), (Integer value) -> value * 2);
+
+    // Act
+    final var result = fn.apply("abcd");
+
+    // Assert
+    softly.assertThat(result).isEqualTo(8);
+  }
+
+  @Test
+  void curry_expectedApplyBiFunction() {
+    // Arrange
+    final var fn = Functions.curry((String left, String right) -> left + right);
+
+    // Act
+    final var result = fn.apply("a").apply("b");
+
+    // Assert
+    softly.assertThat(result).isEqualTo("ab");
+  }
+
+  @Test
   void tupled_expectedApplyBiFunction() {
     // Arrange
     final var fn = Functions.tupled((String left, String right) -> left + right);
@@ -101,6 +137,27 @@ class FunctionsTest {
   }
 
   @Test
+  void memoize_withFunction_nullInput_expectedCachedNullValue() {
+    // Arrange
+    final var calls = new AtomicInteger(0);
+    final var fn =
+        Functions.memoize(
+            value -> {
+              calls.incrementAndGet();
+              return null;
+            });
+
+    fn.apply(null);
+
+    // Act
+    final var result = fn.apply(null);
+
+    // Assert
+    softly.assertThat(result).isNull();
+    softly.assertThat(calls.get()).isEqualTo(1);
+  }
+
+  @Test
   void memoize_withFunction_differentInput_expectedNewEvaluation() {
     // Arrange
     final var calls = new AtomicInteger(0);
@@ -158,6 +215,27 @@ class FunctionsTest {
 
     // Assert
     softly.assertThat(result).isEqualTo("ab");
+    softly.assertThat(calls.get()).isEqualTo(1);
+  }
+
+  @Test
+  void memoize_withBiFunction_nullInput_expectedCachedNullValue() {
+    // Arrange
+    final var calls = new AtomicInteger(0);
+    final var fn =
+        Functions.memoize(
+            (String left, String right) -> {
+              calls.incrementAndGet();
+              return null;
+            });
+
+    fn.apply(null, null);
+
+    // Act
+    final var result = fn.apply(null, null);
+
+    // Assert
+    softly.assertThat(result).isNull();
     softly.assertThat(calls.get()).isEqualTo(1);
   }
 
