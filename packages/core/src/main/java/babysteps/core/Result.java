@@ -16,10 +16,15 @@ import org.jspecify.annotations.Nullable;
 /**
  * A container that represents either a success value ({@code Ok}) or an error value ({@code Err}).
  *
- * <p>{@code T} may be {@code null} when using {@link #ok(Object)}. Errors must be non-null.
+ * <p>{@code T} may be {@code null} when using {@link #ok(Object)}. Errors may be {@code null} when
+ * using {@link #err(Object)}.
+ *
+ * <p>Use {@link Either} when you need a symmetric sum type where neither side implies success or
+ * failure. {@code Result} is intentionally biased toward a success/error workflow and provides
+ * convenience APIs (unwrap/orElse/recover) tailored to that intent.
  *
  * @param <T> the success value type, possibly nullable
- * @param <E> the error value type, non-null
+ * @param <E> the error value type, possibly nullable
  */
 public sealed interface Result<T, E> permits Result.Ok, Result.Err {
   /**
@@ -35,12 +40,11 @@ public sealed interface Result<T, E> permits Result.Ok, Result.Err {
   /**
    * Creates an {@code Err} result with the given error.
    *
-   * @param error the non-null error value
+   * @param error the error value, possibly {@code null}
    * @return an {@code Err} result
-   * @throws NullPointerException if {@code error} is {@code null}
    */
-  static <T, E> Result<T, E> err(@NonNull E error) {
-    return new Err<>(Objects.requireNonNull(error, "error"));
+  static <T, E> Result<T, E> err(@Nullable E error) {
+    return new Err<>(error);
   }
 
   /**
@@ -70,10 +74,10 @@ public sealed interface Result<T, E> permits Result.Ok, Result.Err {
   /**
    * Returns the error value.
    *
-   * @return the non-null error value
+   * @return the error value, possibly {@code null}
    * @throws IllegalStateException if this result is {@code Ok}
    */
-  @NonNull E unwrapErr();
+  @Nullable E unwrapErr();
 
   /**
    * Returns the success value or the provided fallback when this is {@code Err}.
@@ -107,7 +111,7 @@ public sealed interface Result<T, E> permits Result.Ok, Result.Err {
    * @throws NullPointerException if {@code mapper} or its result is {@code null}
    */
   default <X extends Throwable> @Nullable T unwrapOrThrow(
-      @NonNull Function<? super E, ? extends X> mapper) throws X {
+      @NonNull Function<? super @Nullable E, ? extends X> mapper) throws X {
     Objects.requireNonNull(mapper, "mapper");
     if (isErr()) {
       throw Objects.requireNonNull(mapper.apply(unwrapErr()), "exception");
@@ -158,7 +162,7 @@ public sealed interface Result<T, E> permits Result.Ok, Result.Err {
    * @throws IllegalStateException if this result is {@code Ok}
    * @throws NullPointerException if {@code message} is {@code null}
    */
-  default @NonNull E expectErr(@NonNull String message) {
+  default @Nullable E expectErr(@NonNull String message) {
     Objects.requireNonNull(message, "message");
     if (isOk()) {
       throw new IllegalStateException(message);
@@ -225,7 +229,7 @@ public sealed interface Result<T, E> permits Result.Ok, Result.Err {
    * @throws NullPointerException if {@code ifErr} or {@code ifOk} is {@code null}
    */
   default <U> @Nullable U fold(
-      @NonNull Function<? super E, ? extends U> ifErr,
+      @NonNull Function<? super @Nullable E, ? extends U> ifErr,
       @NonNull Function<? super @Nullable T, ? extends U> ifOk) {
     Objects.requireNonNull(ifErr, "ifErr");
     Objects.requireNonNull(ifOk, "ifOk");
@@ -255,7 +259,7 @@ public sealed interface Result<T, E> permits Result.Ok, Result.Err {
    * @return a recovered {@code Ok} or the original {@code Ok}
    * @throws NullPointerException if {@code mapper} is {@code null}
    */
-  default Result<T, E> recover(@NonNull Function<? super E, ? extends @Nullable T> mapper) {
+  default Result<T, E> recover(@NonNull Function<? super @Nullable E, ? extends @Nullable T> mapper) {
     Objects.requireNonNull(mapper, "mapper");
     if (isOk()) {
       return this;
@@ -271,7 +275,7 @@ public sealed interface Result<T, E> permits Result.Ok, Result.Err {
    * @throws NullPointerException if {@code mapper} or its result is {@code null}
    */
   default Result<T, E> recoverWith(
-      @NonNull Function<? super E, ? extends Result<? extends T, E>> mapper) {
+      @NonNull Function<? super @Nullable E, ? extends Result<? extends T, E>> mapper) {
     Objects.requireNonNull(mapper, "mapper");
     if (isOk()) {
       return this;
@@ -290,7 +294,7 @@ public sealed interface Result<T, E> permits Result.Ok, Result.Err {
    * @throws NullPointerException if {@code mapper} or its result is {@code null}
    */
   default <F> Result<T, F> recoverWithErr(
-      @NonNull Function<? super E, ? extends Result<? extends T, F>> mapper) {
+      @NonNull Function<? super @Nullable E, ? extends Result<? extends T, F>> mapper) {
     Objects.requireNonNull(mapper, "mapper");
     if (isOk()) {
       return ok(unwrap());
@@ -341,7 +345,7 @@ public sealed interface Result<T, E> permits Result.Ok, Result.Err {
    * @throws NullPointerException if {@code mapper} is {@code null}
    */
   default <F> @Nullable F mapErrOr(
-      @Nullable F fallback, @NonNull Function<? super E, ? extends F> mapper) {
+      @Nullable F fallback, @NonNull Function<? super @Nullable E, ? extends F> mapper) {
     Objects.requireNonNull(mapper, "mapper");
     if (isErr()) {
       return mapper.apply(unwrapErr());
@@ -380,7 +384,7 @@ public sealed interface Result<T, E> permits Result.Ok, Result.Err {
    */
   default <F> @Nullable F mapErrOrElse(
       @NonNull Supplier<? extends @Nullable F> fallback,
-      @NonNull Function<? super E, ? extends F> mapper) {
+      @NonNull Function<? super @Nullable E, ? extends F> mapper) {
     Objects.requireNonNull(fallback, "fallback");
     Objects.requireNonNull(mapper, "mapper");
     if (isErr()) {
@@ -396,7 +400,7 @@ public sealed interface Result<T, E> permits Result.Ok, Result.Err {
    * @return a mapped {@code Err}, or the same {@code Ok}
    * @throws NullPointerException if {@code mapper} is {@code null}
    */
-  default <F> Result<T, F> mapErr(@NonNull Function<? super E, ? extends F> mapper) {
+  default <F> Result<T, F> mapErr(@NonNull Function<? super @Nullable E, ? extends F> mapper) {
     Objects.requireNonNull(mapper, "mapper");
     if (isOk()) {
       return ok(unwrap());
@@ -416,13 +420,13 @@ public sealed interface Result<T, E> permits Result.Ok, Result.Err {
    */
   default <U, F> Result<U, F> mapBoth(
       @NonNull Function<? super @Nullable T, ? extends U> okMapper,
-      @NonNull Function<? super E, ? extends F> errMapper) {
+      @NonNull Function<? super @Nullable E, ? extends F> errMapper) {
     Objects.requireNonNull(okMapper, "okMapper");
     Objects.requireNonNull(errMapper, "errMapper");
     if (isOk()) {
       return ok(okMapper.apply(unwrap()));
     }
-    return err(Objects.requireNonNull(errMapper.apply(unwrapErr()), "error"));
+    return err(errMapper.apply(unwrapErr()));
   }
 
   /**
@@ -447,7 +451,7 @@ public sealed interface Result<T, E> permits Result.Ok, Result.Err {
    * @return this result
    * @throws NullPointerException if {@code action} is {@code null}
    */
-  default Result<T, E> tapErr(@NonNull Consumer<? super E> action) {
+  default Result<T, E> tapErr(@NonNull Consumer<? super @Nullable E> action) {
     Objects.requireNonNull(action, "action");
     if (isErr()) {
       action.accept(unwrapErr());
@@ -464,7 +468,8 @@ public sealed interface Result<T, E> permits Result.Ok, Result.Err {
    * @throws NullPointerException if {@code onOk} or {@code onErr} is {@code null}
    */
   default Result<T, E> tapBoth(
-      @NonNull Consumer<? super @Nullable T> onOk, @NonNull Consumer<? super E> onErr) {
+      @NonNull Consumer<? super @Nullable T> onOk,
+      @NonNull Consumer<? super @Nullable E> onErr) {
     Objects.requireNonNull(onOk, "onOk");
     Objects.requireNonNull(onErr, "onErr");
     if (isOk()) {
@@ -566,7 +571,7 @@ public sealed interface Result<T, E> permits Result.Ok, Result.Err {
    * @return {@code true} when {@code Err} and predicate returns {@code true}
    * @throws NullPointerException if {@code predicate} is {@code null}
    */
-  default boolean isErrAnd(@NonNull Predicate<? super E> predicate) {
+  default boolean isErrAnd(@NonNull Predicate<? super @Nullable E> predicate) {
     Objects.requireNonNull(predicate, "predicate");
     return isErr() && predicate.test(unwrapErr());
   }
@@ -602,7 +607,7 @@ public sealed interface Result<T, E> permits Result.Ok, Result.Err {
    * @return {@code Try.success} for {@code Ok}, otherwise {@code Try.failure}
    * @throws NullPointerException if {@code mapper} or its result is {@code null}
    */
-  default Try<T> toTry(@NonNull Function<? super E, ? extends Throwable> mapper) {
+  default Try<T> toTry(@NonNull Function<? super @Nullable E, ? extends Throwable> mapper) {
     Objects.requireNonNull(mapper, "mapper");
     if (isOk()) {
       return Try.success(unwrap());
@@ -618,7 +623,7 @@ public sealed interface Result<T, E> permits Result.Ok, Result.Err {
    */
   default Optional<E> err() {
     if (isErr()) {
-      return Optional.of(unwrapErr());
+      return Optional.ofNullable(unwrapErr());
     }
     return Optional.empty();
   }
@@ -629,7 +634,7 @@ public sealed interface Result<T, E> permits Result.Ok, Result.Err {
    * @param fallback fallback error value
    * @return the error value or {@code fallback}
    */
-  default @NonNull E unwrapErrOr(@NonNull E fallback) {
+  default @Nullable E unwrapErrOr(@Nullable E fallback) {
     return isErr() ? unwrapErr() : fallback;
   }
 
@@ -640,7 +645,7 @@ public sealed interface Result<T, E> permits Result.Ok, Result.Err {
    * @return the error value or the supplier result
    * @throws NullPointerException if {@code fallback} is {@code null}
    */
-  default @NonNull E unwrapErrOrElse(@NonNull Supplier<? extends E> fallback) {
+  default @Nullable E unwrapErrOrElse(@NonNull Supplier<? extends @Nullable E> fallback) {
     Objects.requireNonNull(fallback, "fallback");
     return isErr() ? unwrapErr() : fallback.get();
   }
@@ -700,7 +705,7 @@ public sealed interface Result<T, E> permits Result.Ok, Result.Err {
    * @throws NullPointerException if {@code mapper} or its result is {@code null}
    */
   default <F> Result<T, F> andThenErr(
-      @NonNull Function<? super E, ? extends Result<? extends T, F>> mapper) {
+      @NonNull Function<? super @Nullable E, ? extends Result<? extends T, F>> mapper) {
     Objects.requireNonNull(mapper, "mapper");
     if (isOk()) {
       return ok(unwrap());
@@ -723,7 +728,7 @@ public sealed interface Result<T, E> permits Result.Ok, Result.Err {
       @NonNull Collection<? extends Result<? extends T, ? extends E>> results) {
     Objects.requireNonNull(results, "results");
     final var oks = new ArrayList<T>();
-    final var errs = new ArrayList<E>();
+    final var errs = new ArrayList<@Nullable E>();
     for (final var result : results) {
       Objects.requireNonNull(result, "result");
       if (result.isOk()) {
@@ -794,7 +799,7 @@ public sealed interface Result<T, E> permits Result.Ok, Result.Err {
    * @param <T> success value type
    * @param <E> error value type
    */
-  record Partition<T, E>(@NonNull List<T> oks, @NonNull List<E> errs) {}
+  record Partition<T, E>(@NonNull List<T> oks, @NonNull List<@Nullable E> errs) {}
 
   /**
    * A successful result.
@@ -813,7 +818,7 @@ public sealed interface Result<T, E> permits Result.Ok, Result.Err {
     }
 
     @Override
-    public @NonNull E unwrapErr() {
+    public @Nullable E unwrapErr() {
       throw new IllegalStateException("Result is Ok");
     }
   }
@@ -821,12 +826,9 @@ public sealed interface Result<T, E> permits Result.Ok, Result.Err {
   /**
    * An error result.
    *
-   * @param error the non-null error value
+   * @param error the error value, possibly {@code null}
    */
-  record Err<T, E>(@NonNull E error) implements Result<T, E> {
-    public Err {
-      Objects.requireNonNull(error, "error");
-    }
+  record Err<T, E>(@Nullable E error) implements Result<T, E> {
 
     @Override
     public boolean isOk() {
@@ -839,7 +841,7 @@ public sealed interface Result<T, E> permits Result.Ok, Result.Err {
     }
 
     @Override
-    public @NonNull E unwrapErr() {
+    public @Nullable E unwrapErr() {
       return error;
     }
   }
