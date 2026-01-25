@@ -602,6 +602,18 @@ class EitherTest {
   }
 
   @Test
+  void mapRight_withLeft_expectedSameLeft() {
+    // Arrange
+    final var sut = Either.<String, String>left("error");
+
+    // Act
+    final var result = sut.mapRight(value -> value + "!");
+
+    // Assert
+    softly.assertThat(result.unwrapLeft()).isEqualTo("error");
+  }
+
+  @Test
   void peek_withRight_expectedActionCalled() {
     // Arrange
     final var captured = new AtomicReference<String>();
