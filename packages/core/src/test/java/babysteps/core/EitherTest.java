@@ -815,6 +815,18 @@ class EitherTest {
   }
 
   @Test
+  void right_withLeft_expectedEmpty() {
+    // Arrange
+    final var sut = Either.<String, String>left("error");
+
+    // Act
+    final var result = sut.right();
+
+    // Assert
+    softly.assertThat(result).isEqualTo(Optional.empty());
+  }
+
+  @Test
   void toOption_withRight_expectedSome() {
     // Arrange
     final var sut = Either.<String, String>right("value");
