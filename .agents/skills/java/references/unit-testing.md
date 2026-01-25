@@ -4,6 +4,7 @@
 
 - JUnit5
 - AssertJ
+- JaCoCo
 - Mockito
 
 ## AAA (Arrange-Act-Assert) pattern

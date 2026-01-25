@@ -21,7 +21,7 @@
 ### fp
 - [ ] Functions
   - [x] compose/pipe/curry
-  - [ ] tupled/untupled, flip, partial, memoize
+  - [x] tupled/untupled, flip, partial, memoize
 - [ ] Predicates
   - [ ] and/or/not combinators
 - [ ] Consumers

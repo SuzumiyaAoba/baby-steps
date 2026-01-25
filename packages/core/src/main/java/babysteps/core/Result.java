@@ -150,15 +150,13 @@ public sealed interface Result<T, E> permits Result.Ok, Result.Err {
    * @return this result for {@code Ok}, otherwise the supplied result
    * @throws NullPointerException if {@code fallback} or its result is {@code null}
    */
-  default Result<T, E> orElseGet(
-      @NonNull Supplier<? extends Result<? extends T, E>> fallback) {
+  default Result<T, E> orElseGet(@NonNull Supplier<? extends Result<? extends T, E>> fallback) {
     Objects.requireNonNull(fallback, "fallback");
     if (isOk()) {
       return this;
     }
     @SuppressWarnings("unchecked")
-    final var other =
-        (Result<T, E>) Objects.requireNonNull(fallback.get(), "result");
+    final var other = (Result<T, E>) Objects.requireNonNull(fallback.get(), "result");
     return other;
   }
 
@@ -201,7 +199,7 @@ public sealed interface Result<T, E> permits Result.Ok, Result.Err {
    * @return a recovered {@code Ok} or the original {@code Ok}
    * @throws NullPointerException if {@code mapper} is {@code null}
    */
-  default Result<T, E> recover(@NonNull Function<? super E, ? extends T> mapper) {
+  default Result<T, E> recover(@NonNull Function<? super E, ? extends @Nullable T> mapper) {
     Objects.requireNonNull(mapper, "mapper");
     if (isOk()) {
       return this;
@@ -350,7 +348,7 @@ public sealed interface Result<T, E> permits Result.Ok, Result.Err {
    *
    * @return {@link Optional#empty()} for {@code Err}, otherwise the success value
    */
-  default Optional<T> ok() {
+  default Optional<@Nullable T> ok() {
     if (isOk()) {
       return Optional.ofNullable(unwrap());
     }
@@ -362,7 +360,7 @@ public sealed interface Result<T, E> permits Result.Ok, Result.Err {
    *
    * @return {@code Some} for {@code Ok}, otherwise {@code None}
    */
-  default Option<T> toOption() {
+  default Option<@NonNull T> toOption() {
     if (isOk()) {
       return Option.ofNullable(unwrap());
     }
@@ -374,7 +372,7 @@ public sealed interface Result<T, E> permits Result.Ok, Result.Err {
    *
    * @return {@link Optional#empty()} for {@code Ok}, otherwise the error value
    */
-  default Optional<E> err() {
+  default Optional<@NonNull E> err() {
     if (isErr()) {
       return Optional.of(unwrapErr());
     }

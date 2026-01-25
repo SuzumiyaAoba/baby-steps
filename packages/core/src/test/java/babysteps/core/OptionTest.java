@@ -395,7 +395,8 @@ class OptionTest {
         (ThrowingCallable) () -> sut.orElseThrow(() -> new IllegalStateException("missing"));
 
     // Assert
-    softly.assertThatThrownBy(action)
+    softly
+        .assertThatThrownBy(action)
         .isInstanceOf(IllegalStateException.class)
         .hasMessage("missing");
   }

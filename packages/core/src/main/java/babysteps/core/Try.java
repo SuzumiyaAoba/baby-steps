@@ -7,11 +7,11 @@ import org.jspecify.annotations.NonNull;
 import org.jspecify.annotations.Nullable;
 
 /**
- * A container that captures exceptions from computations, yielding either {@code Success} or
- * {@code Failure}.
+ * A container that captures exceptions from computations, yielding either {@code Success} or {@code
+ * Failure}.
  *
- * <p>{@code T} may be {@code null} when using {@link #success(Object)} or {@link #of(CheckedSupplier)}.
- * Failures always carry a non-null {@link Throwable}.
+ * <p>{@code T} may be {@code null} when using {@link #success(Object)} or {@link
+ * #of(CheckedSupplier)}. Failures always carry a non-null {@link Throwable}.
  *
  * @param <T> success value type, possibly nullable
  */
@@ -24,7 +24,7 @@ public sealed interface Try<T> permits Try.Success, Try.Failure {
    * @return a {@code Success} for normal completion, otherwise {@code Failure}
    * @throws NullPointerException if {@code supplier} is {@code null}
    */
-  static <T> Try<T> of(@NonNull CheckedSupplier<? extends T> supplier) {
+  static <T> @NonNull Try<T> of(@NonNull CheckedSupplier<? extends T> supplier) {
     Objects.requireNonNull(supplier, "supplier");
     try {
       return success(supplier.get());
@@ -40,7 +40,7 @@ public sealed interface Try<T> permits Try.Success, Try.Failure {
    * @param <T> success value type
    * @return a {@code Success}
    */
-  static <T> Try<T> success(@Nullable T value) {
+  static <T> @NonNull Try<T> success(@Nullable T value) {
     return new Success<>(value);
   }
 
@@ -52,7 +52,7 @@ public sealed interface Try<T> permits Try.Success, Try.Failure {
    * @return a {@code Failure}
    * @throws NullPointerException if {@code error} is {@code null}
    */
-  static <T> Try<T> failure(@NonNull Throwable error) {
+  static <T> @NonNull Try<T> failure(@NonNull Throwable error) {
     return new Failure<>(Objects.requireNonNull(error, "error"));
   }
 
@@ -114,7 +114,7 @@ public sealed interface Try<T> permits Try.Success, Try.Failure {
    * @return mapped {@code Success} or {@code Failure}
    * @throws NullPointerException if {@code mapper} is {@code null}
    */
-  default <U> Try<U> map(@NonNull Function<? super @Nullable T, ? extends U> mapper) {
+  default <U> @NonNull Try<U> map(@NonNull Function<? super @Nullable T, ? extends U> mapper) {
     Objects.requireNonNull(mapper, "mapper");
     if (isFailure()) {
       return failure(getCause());
@@ -134,7 +134,7 @@ public sealed interface Try<T> permits Try.Success, Try.Failure {
    * @return mapped {@code Try} or {@code Failure}
    * @throws NullPointerException if {@code mapper} or its result is {@code null}
    */
-  default <U> Try<U> flatMap(
+  default <U> @NonNull Try<U> flatMap(
       @NonNull Function<? super @Nullable T, ? extends Try<? extends U>> mapper) {
     Objects.requireNonNull(mapper, "mapper");
     if (isFailure()) {
@@ -156,7 +156,8 @@ public sealed interface Try<T> permits Try.Success, Try.Failure {
    * @return a recovered {@code Success} or the original {@code Success}
    * @throws NullPointerException if {@code mapper} is {@code null}
    */
-  default Try<T> recover(@NonNull Function<? super Throwable, ? extends T> mapper) {
+  default @NonNull Try<T> recover(
+      @NonNull Function<? super Throwable, ? extends @Nullable T> mapper) {
     Objects.requireNonNull(mapper, "mapper");
     if (isSuccess()) {
       return this;
@@ -175,8 +176,8 @@ public sealed interface Try<T> permits Try.Success, Try.Failure {
    * @return a recovered {@code Try} or the original {@code Success}
    * @throws NullPointerException if {@code mapper} or its result is {@code null}
    */
-  default Try<T> recoverWith(
-      @NonNull Function<? super Throwable, ? extends Try<? extends T>> mapper) {
+  default @NonNull Try<T> recoverWith(
+      @NonNull Function<? super Throwable, ? extends Try<? extends @Nullable T>> mapper) {
     Objects.requireNonNull(mapper, "mapper");
     if (isSuccess()) {
       return this;
@@ -195,7 +196,7 @@ public sealed interface Try<T> permits Try.Success, Try.Failure {
    *
    * @return {@code Result.ok} for {@code Success}, otherwise {@code Result.err}
    */
-  default Result<T, Throwable> toResult() {
+  default @NonNull Result<T, @NonNull Throwable> toResult() {
     if (isSuccess()) {
       return Result.ok(get());
     }
@@ -207,7 +208,7 @@ public sealed interface Try<T> permits Try.Success, Try.Failure {
    *
    * @return {@code Some} for {@code Success}, otherwise {@code None}
    */
-  default Option<T> toOption() {
+  default @NonNull Option<@NonNull T> toOption() {
     if (isSuccess()) {
       return Option.ofNullable(get());
     }
