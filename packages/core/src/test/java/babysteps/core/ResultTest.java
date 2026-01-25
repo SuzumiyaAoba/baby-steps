@@ -1,6 +1,8 @@
 package babysteps.core;
 
+import java.util.List;
 import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.concurrent.atomic.AtomicReference;
 import org.assertj.core.api.SoftAssertions;
 import org.assertj.core.api.ThrowableAssert.ThrowingCallable;
 import org.assertj.core.api.junit.jupiter.InjectSoftAssertions;
@@ -213,6 +215,38 @@ class ResultTest {
   }
 
   @Test
+  void orElseThrow_withOk_expectedValueAndSupplierNotCalled() {
+    // Arrange
+    final var called = new AtomicBoolean(false);
+    final var sut = Result.ok("value");
+
+    // Act
+    final var result =
+        sut.orElseThrow(
+            () -> {
+              called.set(true);
+              return new IllegalStateException("missing");
+            });
+
+    // Assert
+    softly.assertThat(result).isEqualTo("value");
+    softly.assertThat(called).isFalse();
+  }
+
+  @Test
+  void orElseThrow_withErr_expectedException() {
+    // Arrange
+    final var sut = Result.<String, String>err("error");
+
+    // Act
+    final var action =
+        (ThrowingCallable) () -> sut.orElseThrow(() -> new IllegalStateException("error"));
+
+    // Assert
+    softly.assertThatThrownBy(action).isInstanceOf(IllegalStateException.class).hasMessage("error");
+  }
+
+  @Test
   void expect_withOk_expectedValue() {
     // Arrange
     final var sut = Result.ok("value");
@@ -231,6 +265,33 @@ class ResultTest {
 
     // Act
     final var action = (ThrowingCallable) () -> sut.expect("expected");
+
+    // Assert
+    softly
+        .assertThatThrownBy(action)
+        .isInstanceOf(IllegalStateException.class)
+        .hasMessage("expected");
+  }
+
+  @Test
+  void expectErr_withErr_expectedValue() {
+    // Arrange
+    final var sut = Result.<String, String>err("error");
+
+    // Act
+    final var result = sut.expectErr("expected");
+
+    // Assert
+    softly.assertThat(result).isEqualTo("error");
+  }
+
+  @Test
+  void expectErr_withOk_expectedException() {
+    // Arrange
+    final var sut = Result.ok("value");
+
+    // Act
+    final var action = (ThrowingCallable) () -> sut.expectErr("expected");
 
     // Assert
     softly
@@ -276,6 +337,46 @@ class ResultTest {
   }
 
   @Test
+  void fold_withSuppliersOk_expectedOkSupplier() {
+    // Arrange
+    final var called = new AtomicBoolean(false);
+    final var sut = Result.<String, String>ok("value");
+
+    // Act
+    final var result =
+        sut.fold(
+            () -> {
+              called.set(true);
+              return "err";
+            },
+            () -> "ok");
+
+    // Assert
+    softly.assertThat(result).isEqualTo("ok");
+    softly.assertThat(called).isFalse();
+  }
+
+  @Test
+  void fold_withSuppliersErr_expectedErrSupplier() {
+    // Arrange
+    final var called = new AtomicBoolean(false);
+    final var sut = Result.<String, String>err("error");
+
+    // Act
+    final var result =
+        sut.fold(
+            () -> "err",
+            () -> {
+              called.set(true);
+              return "ok";
+            });
+
+    // Assert
+    softly.assertThat(result).isEqualTo("err");
+    softly.assertThat(called).isFalse();
+  }
+
+  @Test
   void recover_withErr_expectedOk() {
     // Arrange
     final var sut = Result.<String, String>err("error");
@@ -306,6 +407,104 @@ class ResultTest {
     softly.assertThat(result.isOk()).isTrue();
     softly.assertThat(result.unwrap()).isEqualTo("value");
     softly.assertThat(called).isFalse();
+  }
+
+  @Test
+  void recoverWith_withErr_expectedRecovered() {
+    // Arrange
+    final var sut = Result.<String, String>err("error");
+
+    // Act
+    final var result = sut.recoverWith(error -> Result.ok("recovered:" + error));
+
+    // Assert
+    softly.assertThat(result.isOk()).isTrue();
+    softly.assertThat(result.unwrap()).isEqualTo("recovered:error");
+  }
+
+  @Test
+  void recoverWith_withOk_expectedOkAndMapperNotCalled() {
+    // Arrange
+    final var called = new AtomicBoolean(false);
+    final var sut = Result.<String, String>ok("value");
+
+    // Act
+    final var result =
+        sut.recoverWith(
+            error -> {
+              called.set(true);
+              return Result.ok("recovered:" + error);
+            });
+
+    // Assert
+    softly.assertThat(result.isOk()).isTrue();
+    softly.assertThat(result.unwrap()).isEqualTo("value");
+    softly.assertThat(called).isFalse();
+  }
+
+  @Test
+  void recoverWithErr_withErr_expectedRecovered() {
+    // Arrange
+    final var sut = Result.<String, String>err("error");
+
+    // Act
+    final var result = sut.recoverWithErr(error -> Result.ok("recovered:" + error));
+
+    // Assert
+    softly.assertThat(result.isOk()).isTrue();
+    softly.assertThat(result.unwrap()).isEqualTo("recovered:error");
+  }
+
+  @Test
+  void recoverWithErr_withOk_expectedOk() {
+    // Arrange
+    final var sut = Result.<String, String>ok("value");
+
+    // Act
+    final var result = sut.recoverWithErr(error -> Result.err("mapped"));
+
+    // Assert
+    softly.assertThat(result.isOk()).isTrue();
+    softly.assertThat(result.unwrap()).isEqualTo("value");
+  }
+
+  @Test
+  void swap_withOk_expectedErr() {
+    // Arrange
+    final var sut = Result.<String, String>ok("value");
+
+    // Act
+    final var result = sut.swap();
+
+    // Assert
+    softly.assertThat(result.isErr()).isTrue();
+    softly.assertThat(result.unwrapErr()).isEqualTo("value");
+  }
+
+  @Test
+  void swap_withErr_expectedOk() {
+    // Arrange
+    final var sut = Result.<String, String>err("error");
+
+    // Act
+    final var result = sut.swap();
+
+    // Assert
+    softly.assertThat(result.isOk()).isTrue();
+    softly.assertThat(result.unwrap()).isEqualTo("error");
+  }
+
+  @Test
+  @SuppressWarnings("ConstantConditions")
+  void swap_withOkNull_expectedException() {
+    // Arrange
+    final var sut = Result.<String, String>ok(null);
+
+    // Act
+    final var action = (ThrowingCallable) sut::swap;
+
+    // Assert
+    softly.assertThatThrownBy(action).isInstanceOf(NullPointerException.class).hasMessage("value");
   }
 
   @Test
@@ -385,6 +584,166 @@ class ResultTest {
   }
 
   @Test
+  void mapErrOr_withErr_expectedMappedValue() {
+    // Arrange
+    final var sut = Result.<String, String>err("error");
+
+    // Act
+    final var result = sut.mapErrOr(0, String::length);
+
+    // Assert
+    softly.assertThat(result).isEqualTo(5);
+  }
+
+  @Test
+  void mapErrOr_withOk_expectedFallback() {
+    // Arrange
+    final var sut = Result.<String, String>ok("value");
+
+    // Act
+    final var result = sut.mapErrOr(0, String::length);
+
+    // Assert
+    softly.assertThat(result).isEqualTo(0);
+  }
+
+  @Test
+  void mapErrOrElse_withErr_expectedMappedValue() {
+    // Arrange
+    final var sut = Result.<String, String>err("error");
+
+    // Act
+    final var result = sut.mapErrOrElse(() -> 0, String::length);
+
+    // Assert
+    softly.assertThat(result).isEqualTo(5);
+  }
+
+  @Test
+  void mapErrOrElse_withOk_expectedFallback() {
+    // Arrange
+    final var sut = Result.<String, String>ok("value");
+
+    // Act
+    final var result = sut.mapErrOrElse(() -> 0, String::length);
+
+    // Assert
+    softly.assertThat(result).isEqualTo(0);
+  }
+
+  @Test
+  void mapBoth_withOk_expectedMappedValue() {
+    // Arrange
+    final var sut = Result.<String, String>ok("value");
+
+    // Act
+    final var result = sut.mapBoth(String::length, String::length);
+
+    // Assert
+    softly.assertThat(result.unwrap()).isEqualTo(5);
+  }
+
+  @Test
+  void mapBoth_withErr_expectedMappedError() {
+    // Arrange
+    final var sut = Result.<String, String>err("error");
+
+    // Act
+    final var result = sut.mapBoth(String::length, String::length);
+
+    // Assert
+    softly.assertThat(result.unwrapErr()).isEqualTo(5);
+  }
+
+  @Test
+  void tap_withOk_expectedConsumerInvocation() {
+    // Arrange
+    final var seen = new AtomicReference<String>();
+    final var sut = Result.<String, String>ok("value");
+
+    // Act
+    final var result = sut.tap(seen::set);
+
+    // Assert
+    softly.assertThat(result).isSameAs(sut);
+    softly.assertThat(seen.get()).isEqualTo("value");
+  }
+
+  @Test
+  void tap_withErr_expectedConsumerNotCalled() {
+    // Arrange
+    final var seen = new AtomicReference<String>();
+    final var sut = Result.<String, String>err("error");
+
+    // Act
+    final var result = sut.tap(seen::set);
+
+    // Assert
+    softly.assertThat(result).isSameAs(sut);
+    softly.assertThat(seen.get()).isNull();
+  }
+
+  @Test
+  void tapErr_withErr_expectedConsumerInvocation() {
+    // Arrange
+    final var seen = new AtomicReference<String>();
+    final var sut = Result.<String, String>err("error");
+
+    // Act
+    final var result = sut.tapErr(seen::set);
+
+    // Assert
+    softly.assertThat(result).isSameAs(sut);
+    softly.assertThat(seen.get()).isEqualTo("error");
+  }
+
+  @Test
+  void tapErr_withOk_expectedConsumerNotCalled() {
+    // Arrange
+    final var seen = new AtomicReference<String>();
+    final var sut = Result.<String, String>ok("value");
+
+    // Act
+    final var result = sut.tapErr(seen::set);
+
+    // Assert
+    softly.assertThat(result).isSameAs(sut);
+    softly.assertThat(seen.get()).isNull();
+  }
+
+  @Test
+  void tapBoth_withOk_expectedOkConsumerInvocation() {
+    // Arrange
+    final var okSeen = new AtomicReference<String>();
+    final var errSeen = new AtomicReference<String>();
+    final var sut = Result.<String, String>ok("value");
+
+    // Act
+    final var result = sut.tapBoth(okSeen::set, errSeen::set);
+
+    // Assert
+    softly.assertThat(result).isSameAs(sut);
+    softly.assertThat(okSeen.get()).isEqualTo("value");
+    softly.assertThat(errSeen.get()).isNull();
+  }
+
+  @Test
+  void tapBoth_withErr_expectedErrConsumerInvocation() {
+    // Arrange
+    final var okSeen = new AtomicReference<String>();
+    final var errSeen = new AtomicReference<String>();
+    final var sut = Result.<String, String>err("error");
+
+    // Act
+    final var result = sut.tapBoth(okSeen::set, errSeen::set);
+
+    // Assert
+    softly.assertThat(result).isSameAs(sut);
+    softly.assertThat(okSeen.get()).isNull();
+    softly.assertThat(errSeen.get()).isEqualTo("error");
+  }
+
+  @Test
   void map_withErr_expectedErrAndMapperNotCalled() {
     // Arrange
     final var mapped = new AtomicBoolean(false);
@@ -434,6 +793,32 @@ class ResultTest {
     softly.assertThat(result.isOk()).isTrue();
     softly.assertThat(result.unwrap()).isEqualTo("value");
     softly.assertThat(mapped).isFalse();
+  }
+
+  @Test
+  void andThenErr_withErr_expectedMappedResult() {
+    // Arrange
+    final var sut = Result.<String, String>err("error");
+
+    // Act
+    final var result = sut.andThenErr(error -> Result.err("mapped-" + error));
+
+    // Assert
+    softly.assertThat(result.isErr()).isTrue();
+    softly.assertThat(result.unwrapErr()).isEqualTo("mapped-error");
+  }
+
+  @Test
+  void andThenErr_withOk_expectedOk() {
+    // Arrange
+    final var sut = Result.<String, String>ok("value");
+
+    // Act
+    final var result = sut.andThenErr(error -> Result.err("mapped"));
+
+    // Assert
+    softly.assertThat(result.isOk()).isTrue();
+    softly.assertThat(result.unwrap()).isEqualTo("value");
   }
 
   @Test
@@ -527,38 +912,6 @@ class ResultTest {
   }
 
   @Test
-  void andThen_withOk_expectedMappedValue() {
-    // Arrange
-    final var sut = Result.<String, String>ok("value");
-
-    // Act
-    final var result = sut.andThen(value -> Result.ok(value + "!"));
-
-    // Assert
-    softly.assertThat(result.unwrap()).isEqualTo("value!");
-  }
-
-  @Test
-  void andThen_withErr_expectedErrAndMapperNotCalled() {
-    // Arrange
-    final var called = new AtomicBoolean(false);
-    final var sut = Result.<String, String>err("error");
-
-    // Act
-    final var result =
-        sut.andThen(
-            value -> {
-              called.set(true);
-              return Result.ok(value + "!");
-            });
-
-    // Assert
-    softly.assertThat(result.isErr()).isTrue();
-    softly.assertThat(result.unwrapErr()).isEqualTo("error");
-    softly.assertThat(called).isFalse();
-  }
-
-  @Test
   void flatMap_withOk_expectedMappedValue() {
     // Arrange
     final var sut = Result.<String, String>ok("value");
@@ -600,6 +953,58 @@ class ResultTest {
     softly.assertThat(result.isErr()).isTrue();
     softly.assertThat(result.unwrapErr()).isEqualTo("error");
     softly.assertThat(mapped).isFalse();
+  }
+
+  @Test
+  void flatten_withOkOk_expectedOk() {
+    // Arrange
+    final var sut = Result.<Result<String, String>, String>ok(Result.ok("value"));
+
+    // Act
+    final var result = sut.flatten();
+
+    // Assert
+    softly.assertThat(result.isOk()).isTrue();
+    softly.assertThat(result.unwrap()).isEqualTo("value");
+  }
+
+  @Test
+  void flatten_withOkErr_expectedErr() {
+    // Arrange
+    final var sut = Result.<Result<String, String>, String>ok(Result.err("error"));
+
+    // Act
+    final var result = sut.flatten();
+
+    // Assert
+    softly.assertThat(result.isErr()).isTrue();
+    softly.assertThat(result.unwrapErr()).isEqualTo("error");
+  }
+
+  @Test
+  void flatten_withErr_expectedErr() {
+    // Arrange
+    final var sut = Result.<Result<String, String>, String>err("error");
+
+    // Act
+    final var result = sut.flatten();
+
+    // Assert
+    softly.assertThat(result.isErr()).isTrue();
+    softly.assertThat(result.unwrapErr()).isEqualTo("error");
+  }
+
+  @Test
+  @SuppressWarnings("ConstantConditions")
+  void flatten_withOkNull_expectedException() {
+    // Arrange
+    final var sut = Result.<Result<String, String>, String>ok(null);
+
+    // Act
+    final var action = (ThrowingCallable) sut::flatten;
+
+    // Assert
+    softly.assertThatThrownBy(action).isInstanceOf(NullPointerException.class).hasMessage("value");
   }
 
   @Test
@@ -778,6 +1183,35 @@ class ResultTest {
   }
 
   @Test
+  void toTry_withOk_expectedSuccess() {
+    // Arrange
+    final var sut = Result.<String, String>ok("value");
+
+    // Act
+    final var result = sut.toTry(RuntimeException::new);
+
+    // Assert
+    softly.assertThat(result.isSuccess()).isTrue();
+    softly.assertThat(result.get()).isEqualTo("value");
+  }
+
+  @Test
+  void toTry_withErr_expectedFailure() {
+    // Arrange
+    final var sut = Result.<String, String>err("error");
+
+    // Act
+    final var result = sut.toTry(IllegalStateException::new);
+
+    // Assert
+    softly.assertThat(result.isFailure()).isTrue();
+    softly
+        .assertThat(result.getCause())
+        .isInstanceOf(IllegalStateException.class)
+        .hasMessage("error");
+  }
+
+  @Test
   void contains_withOk_expectedTrue() {
     // Arrange
     final var sut = Result.<String, String>ok("value");
@@ -787,6 +1221,120 @@ class ResultTest {
 
     // Assert
     softly.assertThat(result).isTrue();
+  }
+
+  @Test
+  void containsErr_withErr_expectedTrue() {
+    // Arrange
+    final var sut = Result.<String, String>err("error");
+
+    // Act
+    final var result = sut.containsErr("error");
+
+    // Assert
+    softly.assertThat(result).isTrue();
+  }
+
+  @Test
+  void containsErr_withErrNonMatching_expectedFalse() {
+    // Arrange
+    final var sut = Result.<String, String>err("error");
+
+    // Act
+    final var result = sut.containsErr("other");
+
+    // Assert
+    softly.assertThat(result).isFalse();
+  }
+
+  @Test
+  void containsErr_withOk_expectedFalse() {
+    // Arrange
+    final var sut = Result.<String, String>ok("value");
+
+    // Act
+    final var result = sut.containsErr("error");
+
+    // Assert
+    softly.assertThat(result).isFalse();
+  }
+
+  @Test
+  void zip_withOk_expectedCombinedValue() {
+    // Arrange
+    final var sut = Result.<String, String>ok("value");
+    final var other = Result.<Integer, String>ok(2);
+
+    // Act
+    final var result = sut.zip(other, (left, right) -> left + right);
+
+    // Assert
+    softly.assertThat(result.unwrap()).isEqualTo("value2");
+  }
+
+  @Test
+  void zip_withErr_expectedErr() {
+    // Arrange
+    final var sut = Result.<String, String>err("error");
+    final var other = Result.<Integer, String>ok(2);
+
+    // Act
+    final var result = sut.zip(other, (left, right) -> left + right);
+
+    // Assert
+    softly.assertThat(result.unwrapErr()).isEqualTo("error");
+  }
+
+  @Test
+  void zip_withOtherErr_expectedErr() {
+    // Arrange
+    final var sut = Result.<String, String>ok("value");
+    final var other = Result.<Integer, String>err("other");
+
+    // Act
+    final var result = sut.zip(other, (left, right) -> left + right);
+
+    // Assert
+    softly.assertThat(result.unwrapErr()).isEqualTo("other");
+  }
+
+  @Test
+  void combine_withOk_expectedCombinedValue() {
+    // Arrange
+    final var sut = Result.<String, String>ok("a");
+    final var other = Result.<String, String>ok("b");
+
+    // Act
+    final var result = sut.combine(other, (left, right) -> left + right);
+
+    // Assert
+    softly.assertThat(result.unwrap()).isEqualTo("ab");
+  }
+
+  @Test
+  void combine_withErr_expectedErr() {
+    // Arrange
+    final var sut = Result.<String, String>err("error");
+    final var other = Result.<String, String>ok("b");
+
+    // Act
+    final var result = sut.combine(other, (left, right) -> left + right);
+
+    // Assert
+    softly.assertThat(result.unwrapErr()).isEqualTo("error");
+  }
+
+  @Test
+  void combine_withOtherErr_expectedErr() {
+    // Arrange
+    final var sut = Result.<String, String>ok("a");
+    final var other = Result.<String, String>err("other");
+
+    // Act
+    final var result = sut.combine(other, (left, right) -> left + right);
+
+    // Assert
+    softly.assertThat(result.unwrapErr()).isEqualTo("other");
   }
 
   @Test
@@ -836,6 +1384,136 @@ class ResultTest {
 
     // Assert
     softly.assertThat(result).isEmpty();
+  }
+
+  @Test
+  void unwrapErrOr_withErr_expectedError() {
+    // Arrange
+    final var sut = Result.<String, String>err("error");
+
+    // Act
+    final var result = sut.unwrapErrOr("fallback");
+
+    // Assert
+    softly.assertThat(result).isEqualTo("error");
+  }
+
+  @Test
+  void unwrapErrOr_withOk_expectedFallback() {
+    // Arrange
+    final var sut = Result.<String, String>ok("value");
+
+    // Act
+    final var result = sut.unwrapErrOr("fallback");
+
+    // Assert
+    softly.assertThat(result).isEqualTo("fallback");
+  }
+
+  @Test
+  void unwrapErrOrElse_withErr_expectedError() {
+    // Arrange
+    final var called = new AtomicBoolean(false);
+    final var sut = Result.<String, String>err("error");
+
+    // Act
+    final var result =
+        sut.unwrapErrOrElse(
+            () -> {
+              called.set(true);
+              return "fallback";
+            });
+
+    // Assert
+    softly.assertThat(result).isEqualTo("error");
+    softly.assertThat(called).isFalse();
+  }
+
+  @Test
+  void unwrapErrOrElse_withOk_expectedFallback() {
+    // Arrange
+    final var called = new AtomicBoolean(false);
+    final var sut = Result.<String, String>ok("value");
+
+    // Act
+    final var result =
+        sut.unwrapErrOrElse(
+            () -> {
+              called.set(true);
+              return "fallback";
+            });
+
+    // Assert
+    softly.assertThat(result).isEqualTo("fallback");
+    softly.assertThat(called).isTrue();
+  }
+
+  @Test
+  void partition_withMixed_expectedPartitionedLists() {
+    // Arrange
+    final var first = Result.<String, String>ok("a");
+    final var second = Result.<String, String>err("b");
+
+    // Act
+    final var result = Result.partition(List.of(first, second));
+
+    // Assert
+    softly.assertThat(result.oks()).containsExactly("a");
+    softly.assertThat(result.errs()).containsExactly("b");
+  }
+
+  @Test
+  void sequence_withAllOk_expectedOkList() {
+    // Arrange
+    final var first = Result.<String, String>ok("a");
+    final var second = Result.<String, String>ok("b");
+
+    // Act
+    final var result = Result.sequence(List.of(first, second));
+
+    // Assert
+    softly.assertThat(result.isOk()).isTrue();
+    softly.assertThat(result.unwrap()).containsExactly("a", "b");
+  }
+
+  @Test
+  void sequence_withErr_expectedErr() {
+    // Arrange
+    final var first = Result.<String, String>ok("a");
+    final var second = Result.<String, String>err("b");
+
+    // Act
+    final var result = Result.sequence(List.of(first, second));
+
+    // Assert
+    softly.assertThat(result.isErr()).isTrue();
+    softly.assertThat(result.unwrapErr()).isEqualTo("b");
+  }
+
+  @Test
+  void traverse_withAllOk_expectedOkList() {
+    // Arrange
+    final var values = List.of("a", "b");
+
+    // Act
+    final var result = Result.traverse(values, value -> Result.ok(value + "!"));
+
+    // Assert
+    softly.assertThat(result.isOk()).isTrue();
+    softly.assertThat(result.unwrap()).containsExactly("a!", "b!");
+  }
+
+  @Test
+  void traverse_withErr_expectedErr() {
+    // Arrange
+    final var values = List.of("b");
+
+    // Act
+    final var result = Result.traverse(values, value -> Result.err("error"));
+
+    // Assert
+    softly.assertThat(result.isErr()).isTrue();
+    softly.assertThat(result.unwrapErr()).isEqualTo("error");
   }
 
   @Test
@@ -925,6 +1603,119 @@ class ResultTest {
 
     // Assert
     softly.assertThatThrownBy(action).isInstanceOf(NullPointerException.class).hasMessage("mapper");
+  }
+
+  @Test
+  @SuppressWarnings("ConstantConditions")
+  void recoverWith_withNullMapper_expectedException() {
+    // Arrange
+    final var sut = Result.<String, String>err("error");
+
+    // Act
+    final var action = (ThrowingCallable) () -> sut.recoverWith(null);
+
+    // Assert
+    softly.assertThatThrownBy(action).isInstanceOf(NullPointerException.class).hasMessage("mapper");
+  }
+
+  @Test
+  @SuppressWarnings("ConstantConditions")
+  void toTry_withNullMapper_expectedException() {
+    // Arrange
+    final var sut = Result.<String, String>err("error");
+
+    // Act
+    final var action = (ThrowingCallable) () -> sut.toTry(null);
+
+    // Assert
+    softly.assertThatThrownBy(action).isInstanceOf(NullPointerException.class).hasMessage("mapper");
+  }
+
+  @Test
+  void toTry_withNullThrowable_expectedException() {
+    // Arrange
+    final var sut = Result.<String, String>err("error");
+
+    // Act
+    final var action = (ThrowingCallable) () -> sut.toTry(error -> null);
+
+    // Assert
+    softly
+        .assertThatThrownBy(action)
+        .isInstanceOf(NullPointerException.class)
+        .hasMessage("throwable");
+  }
+
+  @Test
+  @SuppressWarnings("ConstantConditions")
+  void tap_withNullAction_expectedException() {
+    // Arrange
+    final var sut = Result.<String, String>ok("value");
+
+    // Act
+    final var action = (ThrowingCallable) () -> sut.tap(null);
+
+    // Assert
+    softly.assertThatThrownBy(action).isInstanceOf(NullPointerException.class).hasMessage("action");
+  }
+
+  @Test
+  @SuppressWarnings("ConstantConditions")
+  void tapErr_withNullAction_expectedException() {
+    // Arrange
+    final var sut = Result.<String, String>err("error");
+
+    // Act
+    final var action = (ThrowingCallable) () -> sut.tapErr(null);
+
+    // Assert
+    softly.assertThatThrownBy(action).isInstanceOf(NullPointerException.class).hasMessage("action");
+  }
+
+  @Test
+  @SuppressWarnings("ConstantConditions")
+  void zip_withNullOther_expectedException() {
+    // Arrange
+    final var sut = Result.<String, String>ok("value");
+
+    // Act
+    final var action = (ThrowingCallable) () -> sut.zip(null, (left, right) -> left);
+
+    // Assert
+    softly.assertThatThrownBy(action).isInstanceOf(NullPointerException.class).hasMessage("other");
+  }
+
+  @Test
+  @SuppressWarnings("ConstantConditions")
+  void zip_withNullCombiner_expectedException() {
+    // Arrange
+    final var sut = Result.<String, String>ok("value");
+    final var other = Result.<Integer, String>ok(2);
+
+    // Act
+    final var action = (ThrowingCallable) () -> sut.zip(other, null);
+
+    // Assert
+    softly
+        .assertThatThrownBy(action)
+        .isInstanceOf(NullPointerException.class)
+        .hasMessage("combiner");
+  }
+
+  @Test
+  @SuppressWarnings("ConstantConditions")
+  void orElse_withNullOther_expectedException() {
+    // Arrange
+    final var sut = Result.<String, String>err("error");
+
+    // Act
+    final var action = (ThrowingCallable) () -> sut.orElse(null);
+
+    // Assert
+    softly
+        .assertThatThrownBy(action)
+        .isInstanceOf(NullPointerException.class)
+        .hasMessage("fallback");
   }
 
   @Test

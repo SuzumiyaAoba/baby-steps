@@ -30,20 +30,6 @@ public final class Consumers {
   }
 
   /**
-   * Compose two consumers into one, invoking them in order.
-   *
-   * @param first first consumer
-   * @param second second consumer
-   * @param <T> input type
-   * @return composed consumer
-   * @throws NullPointerException if {@code first} or {@code second} is {@code null}
-   */
-  public static <T> @NonNull Consumer<@Nullable T> compose(
-      @NonNull Consumer<? super @Nullable T> first, @NonNull Consumer<? super @Nullable T> second) {
-    return tee(first, second);
-  }
-
-  /**
    * Combine multiple consumers into one, invoking them in order.
    *
    * @param first first consumer
