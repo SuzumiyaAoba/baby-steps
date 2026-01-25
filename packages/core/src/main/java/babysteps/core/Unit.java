@@ -2,9 +2,7 @@ package babysteps.core;
 
 import org.jspecify.annotations.NonNull;
 
-/**
- * Singleton type to model {@code void} in functional pipelines.
- */
+/** Singleton type to model {@code void} in functional pipelines. */
 public final class Unit {
   private static final Unit INSTANCE = new Unit();
 

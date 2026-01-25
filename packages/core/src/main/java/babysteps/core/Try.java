@@ -7,11 +7,11 @@ import org.jspecify.annotations.NonNull;
 import org.jspecify.annotations.Nullable;
 
 /**
- * A container that captures exceptions from computations, yielding either {@code Success} or
- * {@code Failure}.
+ * A container that captures exceptions from computations, yielding either {@code Success} or {@code
+ * Failure}.
  *
- * <p>{@code T} may be {@code null} when using {@link #success(Object)} or {@link #of(CheckedSupplier)}.
- * Failures always carry a non-null {@link Throwable}.
+ * <p>{@code T} may be {@code null} when using {@link #success(Object)} or {@link
+ * #of(CheckedSupplier)}. Failures always carry a non-null {@link Throwable}.
  *
  * @param <T> success value type, possibly nullable
  */

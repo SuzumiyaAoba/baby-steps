@@ -81,7 +81,8 @@ class ResultTest {
     final var action = (ThrowingCallable) sut::unwrapErr;
 
     // Assert
-    softly.assertThatThrownBy(action)
+    softly
+        .assertThatThrownBy(action)
         .isInstanceOf(IllegalStateException.class)
         .hasMessage("Result is Ok");
   }
@@ -95,7 +96,8 @@ class ResultTest {
     final var action = (ThrowingCallable) sut::unwrap;
 
     // Assert
-    softly.assertThatThrownBy(action)
+    softly
+        .assertThatThrownBy(action)
         .isInstanceOf(IllegalStateException.class)
         .hasMessage("Result is Err");
   }
@@ -201,12 +203,11 @@ class ResultTest {
     // Act
     final var action =
         (ThrowingCallable)
-            () ->
-                sut.unwrapOrThrow(
-                    error -> new IllegalArgumentException("mapped-" + error));
+            () -> sut.unwrapOrThrow(error -> new IllegalArgumentException("mapped-" + error));
 
     // Assert
-    softly.assertThatThrownBy(action)
+    softly
+        .assertThatThrownBy(action)
         .isInstanceOf(IllegalArgumentException.class)
         .hasMessage("mapped-error");
   }
@@ -232,7 +233,8 @@ class ResultTest {
     final var action = (ThrowingCallable) () -> sut.expect("expected");
 
     // Assert
-    softly.assertThatThrownBy(action)
+    softly
+        .assertThatThrownBy(action)
         .isInstanceOf(IllegalStateException.class)
         .hasMessage("expected");
   }
@@ -896,9 +898,7 @@ class ResultTest {
     final var action = (ThrowingCallable) () -> Result.err(null);
 
     // Assert
-    softly.assertThatThrownBy(action)
-        .isInstanceOf(NullPointerException.class)
-        .hasMessage("error");
+    softly.assertThatThrownBy(action).isInstanceOf(NullPointerException.class).hasMessage("error");
   }
 
   @Test
@@ -911,9 +911,7 @@ class ResultTest {
     final var action = (ThrowingCallable) () -> sut.map(null);
 
     // Assert
-    softly.assertThatThrownBy(action)
-        .isInstanceOf(NullPointerException.class)
-        .hasMessage("mapper");
+    softly.assertThatThrownBy(action).isInstanceOf(NullPointerException.class).hasMessage("mapper");
   }
 
   @Test
@@ -926,9 +924,7 @@ class ResultTest {
     final var action = (ThrowingCallable) () -> sut.mapErr(null);
 
     // Assert
-    softly.assertThatThrownBy(action)
-        .isInstanceOf(NullPointerException.class)
-        .hasMessage("mapper");
+    softly.assertThatThrownBy(action).isInstanceOf(NullPointerException.class).hasMessage("mapper");
   }
 
   @Test
@@ -941,9 +937,7 @@ class ResultTest {
     final var action = (ThrowingCallable) () -> sut.flatMap(null);
 
     // Assert
-    softly.assertThatThrownBy(action)
-        .isInstanceOf(NullPointerException.class)
-        .hasMessage("mapper");
+    softly.assertThatThrownBy(action).isInstanceOf(NullPointerException.class).hasMessage("mapper");
   }
 
   @Test
@@ -955,8 +949,6 @@ class ResultTest {
     final var action = (ThrowingCallable) () -> sut.flatMap(value -> null);
 
     // Assert
-    softly.assertThatThrownBy(action)
-        .isInstanceOf(NullPointerException.class)
-        .hasMessage("mapped");
+    softly.assertThatThrownBy(action).isInstanceOf(NullPointerException.class).hasMessage("mapped");
   }
 }

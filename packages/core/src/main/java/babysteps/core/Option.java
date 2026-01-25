@@ -163,8 +163,7 @@ public sealed interface Option<T> permits Option.Some, Option.None {
    * @param supplier supplier for alternative Option
    * @return this or supplied fallback
    */
-  default Option<T> orElseGet(
-      @NonNull Supplier<? extends Option<? extends T>> supplier) {
+  default Option<T> orElseGet(@NonNull Supplier<? extends Option<? extends T>> supplier) {
     Objects.requireNonNull(supplier, "supplier");
     if (isPresent()) {
       return this;
@@ -200,8 +199,7 @@ public sealed interface Option<T> permits Option.Some, Option.None {
    * @return result of the chosen handler
    */
   default <U> @Nullable U fold(
-      @NonNull Supplier<? extends U> ifEmpty,
-      @NonNull Function<? super T, ? extends U> ifPresent) {
+      @NonNull Supplier<? extends U> ifEmpty, @NonNull Function<? super T, ? extends U> ifPresent) {
     Objects.requireNonNull(ifEmpty, "ifEmpty");
     Objects.requireNonNull(ifPresent, "ifPresent");
     return isPresent() ? ifPresent.apply(get()) : ifEmpty.get();
@@ -297,8 +295,7 @@ public sealed interface Option<T> permits Option.Some, Option.None {
    * @param action action to perform when present
    * @param emptyAction action to perform when empty
    */
-  default void ifPresentOrElse(
-      @NonNull Consumer<? super T> action, @NonNull Runnable emptyAction) {
+  default void ifPresentOrElse(@NonNull Consumer<? super T> action, @NonNull Runnable emptyAction) {
     Objects.requireNonNull(action, "action");
     Objects.requireNonNull(emptyAction, "emptyAction");
     if (isPresent()) {

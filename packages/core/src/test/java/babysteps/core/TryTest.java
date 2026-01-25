@@ -81,7 +81,8 @@ class TryTest {
     final var action = (ThrowingCallable) sut::get;
 
     // Assert
-    softly.assertThatThrownBy(action)
+    softly
+        .assertThatThrownBy(action)
         .isInstanceOf(IllegalStateException.class)
         .hasMessage("Try is Failure");
   }
@@ -108,7 +109,8 @@ class TryTest {
     final var action = (ThrowingCallable) sut::getCause;
 
     // Assert
-    softly.assertThatThrownBy(action)
+    softly
+        .assertThatThrownBy(action)
         .isInstanceOf(IllegalStateException.class)
         .hasMessage("Try is Success");
   }
@@ -129,9 +131,11 @@ class TryTest {
     final var cause = new Exception("boom");
 
     // Act
-    final var result = Try.of(() -> {
-      throw cause;
-    });
+    final var result =
+        Try.of(
+            () -> {
+              throw cause;
+            });
 
     // Assert
     softly.assertThat(result.isFailure()).isTrue();
@@ -246,7 +250,8 @@ class TryTest {
 
     // Assert
     softly.assertThat(result.isFailure()).isTrue();
-    softly.assertThat(result.getCause())
+    softly
+        .assertThat(result.getCause())
         .isInstanceOf(IllegalArgumentException.class)
         .hasMessage("mapped");
   }
@@ -297,7 +302,8 @@ class TryTest {
 
     // Assert
     softly.assertThat(result.isFailure()).isTrue();
-    softly.assertThat(result.getCause())
+    softly
+        .assertThat(result.getCause())
         .isInstanceOf(IllegalArgumentException.class)
         .hasMessage("mapped");
   }
@@ -328,7 +334,8 @@ class TryTest {
 
     // Assert
     softly.assertThat(result.isFailure()).isTrue();
-    softly.assertThat(result.getCause())
+    softly
+        .assertThat(result.getCause())
         .isInstanceOf(IllegalArgumentException.class)
         .hasMessage("mapped");
   }
@@ -378,7 +385,8 @@ class TryTest {
 
     // Assert
     softly.assertThat(result.isFailure()).isTrue();
-    softly.assertThat(result.getCause())
+    softly
+        .assertThat(result.getCause())
         .isInstanceOf(IllegalArgumentException.class)
         .hasMessage("mapped");
   }
@@ -462,9 +470,7 @@ class TryTest {
     final var action = (ThrowingCallable) () -> Try.failure(null);
 
     // Assert
-    softly.assertThatThrownBy(action)
-        .isInstanceOf(NullPointerException.class)
-        .hasMessage("error");
+    softly.assertThatThrownBy(action).isInstanceOf(NullPointerException.class).hasMessage("error");
   }
 
   @Test
@@ -475,7 +481,8 @@ class TryTest {
     final var action = (ThrowingCallable) () -> Try.of(null);
 
     // Assert
-    softly.assertThatThrownBy(action)
+    softly
+        .assertThatThrownBy(action)
         .isInstanceOf(NullPointerException.class)
         .hasMessage("supplier");
   }

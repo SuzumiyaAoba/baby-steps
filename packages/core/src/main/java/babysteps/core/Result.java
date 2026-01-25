@@ -150,15 +150,13 @@ public sealed interface Result<T, E> permits Result.Ok, Result.Err {
    * @return this result for {@code Ok}, otherwise the supplied result
    * @throws NullPointerException if {@code fallback} or its result is {@code null}
    */
-  default Result<T, E> orElseGet(
-      @NonNull Supplier<? extends Result<? extends T, E>> fallback) {
+  default Result<T, E> orElseGet(@NonNull Supplier<? extends Result<? extends T, E>> fallback) {
     Objects.requireNonNull(fallback, "fallback");
     if (isOk()) {
       return this;
     }
     @SuppressWarnings("unchecked")
-    final var other =
-        (Result<T, E>) Objects.requireNonNull(fallback.get(), "result");
+    final var other = (Result<T, E>) Objects.requireNonNull(fallback.get(), "result");
     return other;
   }
 
