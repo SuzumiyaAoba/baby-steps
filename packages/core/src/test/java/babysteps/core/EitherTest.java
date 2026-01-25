@@ -479,6 +479,22 @@ class EitherTest {
   }
 
   @Test
+  @SuppressWarnings("ConstantConditions")
+  void mapBoth_withNullRightMapper_expectedException() {
+    // Arrange
+    final var sut = Either.<String, String>right("value");
+
+    // Act
+    final var action = (ThrowingCallable) () -> sut.mapBoth(value -> value, null);
+
+    // Assert
+    softly
+        .assertThatThrownBy(action)
+        .isInstanceOf(NullPointerException.class)
+        .hasMessage("rightMapper");
+  }
+
+  @Test
   void flatMap_withRight_expectedMappedRight() {
     // Arrange
     final var sut = Either.<String, String>right("value");
@@ -927,6 +943,18 @@ class EitherTest {
   }
 
   @Test
+  void contains_withNonMatchingRight_expectedFalse() {
+    // Arrange
+    final var sut = Either.<String, String>right("value");
+
+    // Act
+    final var result = sut.contains("other");
+
+    // Assert
+    softly.assertThat(result).isFalse();
+  }
+
+  @Test
   void contains_withLeft_expectedFalse() {
     // Arrange
     final var sut = Either.<String, String>left("error");
@@ -948,6 +976,18 @@ class EitherTest {
 
     // Assert
     softly.assertThat(result).isTrue();
+  }
+
+  @Test
+  void containsLeft_withNonMatchingLeft_expectedFalse() {
+    // Arrange
+    final var sut = Either.<String, String>left("error");
+
+    // Act
+    final var result = sut.containsLeft("other");
+
+    // Assert
+    softly.assertThat(result).isFalse();
   }
 
   @Test
