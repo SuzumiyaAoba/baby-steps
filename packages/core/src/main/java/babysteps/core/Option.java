@@ -54,12 +54,11 @@ import org.jspecify.annotations.Nullable;
  */
 public sealed interface Option<T> permits Option.Some, Option.None {
   /**
-   * Create a {@link Some} containing a value.
+   * Create a {@link Some} containing a value, including {@code null}.
    *
    * @param value value to wrap, possibly {@code null}
    * @param <T> value type
    * @return Option with a present value
-   * @throws NullPointerException when {@code value} is null
    */
   static <T> @NonNull Option<T> some(@Nullable T value) {
     return new Some<>(value);
@@ -276,7 +275,7 @@ public sealed interface Option<T> permits Option.Some, Option.None {
    * @throws NullPointerException if {@code mapper} is {@code null}
    */
   default <U> @Nullable U mapOr(
-      @Nullable U fallback, @NonNull Function<? super T, ? extends U> mapper) {
+      @Nullable U fallback, @NonNull Function<? super @Nullable T, ? extends U> mapper) {
     Objects.requireNonNull(mapper, "mapper");
     return isPresent() ? mapper.apply(get()) : fallback;
   }
@@ -291,7 +290,8 @@ public sealed interface Option<T> permits Option.Some, Option.None {
    * @throws NullPointerException if {@code mapper} or {@code fallback} is {@code null}
    */
   default <U> @Nullable U mapOrElse(
-      @NonNull Supplier<? extends U> fallback, @NonNull Function<? super T, ? extends U> mapper) {
+      @NonNull Supplier<? extends U> fallback,
+      @NonNull Function<? super @Nullable T, ? extends U> mapper) {
     Objects.requireNonNull(fallback, "fallback");
     Objects.requireNonNull(mapper, "mapper");
     return isPresent() ? mapper.apply(get()) : fallback.get();
@@ -403,6 +403,8 @@ public sealed interface Option<T> permits Option.Some, Option.None {
   /**
    * Convert to a {@link Stream} with 0 or 1 element.
    *
+   * <p>{@link Some} holding {@code null} yields a single-element stream containing {@code null}.
+   *
    * @return Stream of the value when present
    */
   default @NonNull Stream<T> stream() {
@@ -476,7 +478,7 @@ public sealed interface Option<T> permits Option.Some, Option.None {
     }
 
     @Override
-    public @NonNull T get() {
+    public @Nullable T get() {
       throw new NoSuchElementException("Option is empty");
     }
 

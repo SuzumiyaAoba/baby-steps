@@ -407,6 +407,21 @@ class OptionTest {
   }
 
   @Test
+  @SuppressWarnings("ConstantConditions")
+  void or_withNullSupplier_expectedException() {
+    // Arrange
+    final var sut = Option.<String>none();
+
+    // Act
+    final var action = (ThrowingCallable) () -> sut.or(null);
+
+    // Assert
+    softly.assertThatThrownBy(action)
+        .isInstanceOf(NullPointerException.class)
+        .hasMessage("supplier");
+  }
+
+  @Test
   void fold_withNone_expectedEmptyValue() {
     // Arrange
     final var sut = Option.<String>none();
@@ -767,6 +782,21 @@ class OptionTest {
   }
 
   @Test
+  @SuppressWarnings("ConstantConditions")
+  void mapOr_withNullMapper_expectedException() {
+    // Arrange
+    final var sut = Option.some("value");
+
+    // Act
+    final var action = (ThrowingCallable) () -> sut.mapOr(0, null);
+
+    // Assert
+    softly.assertThatThrownBy(action)
+        .isInstanceOf(NullPointerException.class)
+        .hasMessage("mapper");
+  }
+
+  @Test
   void mapOr_withNone_expectedFallback() {
     // Arrange
     final var sut = Option.<String>none();
@@ -796,6 +826,36 @@ class OptionTest {
     // Assert
     softly.assertThat(result).isEqualTo(5);
     softly.assertThat(called).isFalse();
+  }
+
+  @Test
+  @SuppressWarnings("ConstantConditions")
+  void mapOrElse_withNullMapper_expectedException() {
+    // Arrange
+    final var sut = Option.some("value");
+
+    // Act
+    final var action = (ThrowingCallable) () -> sut.mapOrElse(() -> 0, null);
+
+    // Assert
+    softly.assertThatThrownBy(action)
+        .isInstanceOf(NullPointerException.class)
+        .hasMessage("mapper");
+  }
+
+  @Test
+  @SuppressWarnings("ConstantConditions")
+  void mapOrElse_withNullSupplier_expectedException() {
+    // Arrange
+    final var sut = Option.some("value");
+
+    // Act
+    final var action = (ThrowingCallable) () -> sut.mapOrElse(null, String::length);
+
+    // Assert
+    softly.assertThatThrownBy(action)
+        .isInstanceOf(NullPointerException.class)
+        .hasMessage("fallback");
   }
 
   @Test
