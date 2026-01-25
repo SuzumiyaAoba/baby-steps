@@ -12,7 +12,7 @@
   - [x] fold, orElse, peek, contains, equals/hashCode tests
 - [ ] Result
   - [x] Ok/Err, map/mapErr, flatMap, unwrap helpers
-  - [ ] fold, recover, toOption, contains, equals/hashCode tests
+  - [x] fold, recover, toOption, contains, equals/hashCode tests
 - [ ] Try
   - [x] Capture checked exceptions into Result-like model
 - [ ] Unit

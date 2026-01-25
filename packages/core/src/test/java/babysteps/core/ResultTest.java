@@ -250,6 +250,63 @@ class ResultTest {
   }
 
   @Test
+  void fold_withOk_expectedMappedValue() {
+    // Arrange
+    final var sut = Result.<String, String>ok("value");
+
+    // Act
+    final var result = sut.fold(error -> "err:" + error, value -> "ok:" + value);
+
+    // Assert
+    softly.assertThat(result).isEqualTo("ok:value");
+  }
+
+  @Test
+  void fold_withErr_expectedMappedValue() {
+    // Arrange
+    final var sut = Result.<String, String>err("error");
+
+    // Act
+    final var result = sut.fold(error -> "err:" + error, value -> "ok:" + value);
+
+    // Assert
+    softly.assertThat(result).isEqualTo("err:error");
+  }
+
+  @Test
+  void recover_withErr_expectedOk() {
+    // Arrange
+    final var sut = Result.<String, String>err("error");
+
+    // Act
+    final var result = sut.recover(error -> "recovered:" + error);
+
+    // Assert
+    softly.assertThat(result.isOk()).isTrue();
+    softly.assertThat(result.unwrap()).isEqualTo("recovered:error");
+  }
+
+  @Test
+  void recover_withOk_expectedOkAndMapperNotCalled() {
+    // Arrange
+    final var called = new AtomicBoolean(false);
+    final var sut = Result.<String, String>ok("value");
+
+    // Act
+    final var result =
+        sut.recover(
+            error -> {
+              called.set(true);
+              return "recovered:" + error;
+            });
+
+    // Assert
+    softly.assertThat(result.isOk()).isTrue();
+    softly.assertThat(result.unwrap()).isEqualTo("value");
+    softly.assertThat(called).isFalse();
+  }
+
+  @Test
   void map_withNullValue_expectedMappedValue() {
     // Arrange
     final var sut = Result.<String, String>ok(null);
@@ -682,6 +739,79 @@ class ResultTest {
   }
 
   @Test
+  void toOption_withOk_expectedSome() {
+    // Arrange
+    final var sut = Result.<String, String>ok("value");
+
+    // Act
+    final var result = sut.toOption();
+
+    // Assert
+    softly.assertThat(result.isPresent()).isTrue();
+    softly.assertThat(result.get()).isEqualTo("value");
+  }
+
+  @Test
+  void toOption_withOkNull_expectedNone() {
+    // Arrange
+    final var sut = Result.<String, String>ok(null);
+
+    // Act
+    final var result = sut.toOption();
+
+    // Assert
+    softly.assertThat(result.isEmpty()).isTrue();
+  }
+
+  @Test
+  void toOption_withErr_expectedNone() {
+    // Arrange
+    final var sut = Result.<String, String>err("error");
+
+    // Act
+    final var result = sut.toOption();
+
+    // Assert
+    softly.assertThat(result.isEmpty()).isTrue();
+  }
+
+  @Test
+  void contains_withOk_expectedTrue() {
+    // Arrange
+    final var sut = Result.<String, String>ok("value");
+
+    // Act
+    final var result = sut.contains("value");
+
+    // Assert
+    softly.assertThat(result).isTrue();
+  }
+
+  @Test
+  void contains_withOkNonMatching_expectedFalse() {
+    // Arrange
+    final var sut = Result.<String, String>ok("value");
+
+    // Act
+    final var result = sut.contains("other");
+
+    // Assert
+    softly.assertThat(result).isFalse();
+  }
+
+  @Test
+  void contains_withErr_expectedFalse() {
+    // Arrange
+    final var sut = Result.<String, String>err("error");
+
+    // Act
+    final var result = sut.contains("value");
+
+    // Assert
+    softly.assertThat(result).isFalse();
+  }
+
+  @Test
   void err_withErr_expectedOptionalPresent() {
     // Arrange
     final var sut = Result.<String, String>err("error");
@@ -704,6 +834,58 @@ class ResultTest {
 
     // Assert
     softly.assertThat(result).isEmpty();
+  }
+
+  @Test
+  void okEquality_expectedTrue() {
+    // Arrange
+    final var left = Result.<String, String>ok("value");
+    final var right = Result.<String, String>ok("value");
+
+    // Act
+    final var result = left.equals(right);
+
+    // Assert
+    softly.assertThat(result).isTrue();
+  }
+
+  @Test
+  void errEquality_expectedTrue() {
+    // Arrange
+    final var left = Result.<String, String>err("error");
+    final var right = Result.<String, String>err("error");
+
+    // Act
+    final var result = left.equals(right);
+
+    // Assert
+    softly.assertThat(result).isTrue();
+  }
+
+  @Test
+  void okHashCode_expectedMatch() {
+    // Arrange
+    final var left = Result.<String, String>ok("value");
+    final var right = Result.<String, String>ok("value");
+
+    // Act
+    final var result = left.hashCode() == right.hashCode();
+
+    // Assert
+    softly.assertThat(result).isTrue();
+  }
+
+  @Test
+  void errHashCode_expectedMatch() {
+    // Arrange
+    final var left = Result.<String, String>err("error");
+    final var right = Result.<String, String>err("error");
+
+    // Act
+    final var result = left.hashCode() == right.hashCode();
+
+    // Assert
+    softly.assertThat(result).isTrue();
   }
 
   @Test

@@ -178,6 +178,38 @@ public sealed interface Result<T, E> permits Result.Ok, Result.Err {
   }
 
   /**
+   * Fold the result into a non-{@code Result} value by handling both cases.
+   *
+   * @param ifErr handler for the error case
+   * @param ifOk handler for the success case
+   * @param <U> result type
+   * @return result of the chosen handler
+   * @throws NullPointerException if {@code ifErr} or {@code ifOk} is {@code null}
+   */
+  default <U> @Nullable U fold(
+      @NonNull Function<? super E, ? extends U> ifErr,
+      @NonNull Function<? super @Nullable T, ? extends U> ifOk) {
+    Objects.requireNonNull(ifErr, "ifErr");
+    Objects.requireNonNull(ifOk, "ifOk");
+    return isOk() ? ifOk.apply(unwrap()) : ifErr.apply(unwrapErr());
+  }
+
+  /**
+   * Recovers from an error by mapping it to a success value.
+   *
+   * @param mapper the mapper applied to the error value
+   * @return a recovered {@code Ok} or the original {@code Ok}
+   * @throws NullPointerException if {@code mapper} is {@code null}
+   */
+  default Result<T, E> recover(@NonNull Function<? super E, ? extends T> mapper) {
+    Objects.requireNonNull(mapper, "mapper");
+    if (isOk()) {
+      return this;
+    }
+    return ok(mapper.apply(unwrapErr()));
+  }
+
+  /**
    * Returns the mapped success value or {@code fallback} for {@code Err}.
    *
    * @param fallback the value to return for {@code Err}, possibly {@code null}
@@ -228,6 +260,16 @@ public sealed interface Result<T, E> permits Result.Ok, Result.Err {
       return ok(unwrap());
     }
     return err(mapper.apply(unwrapErr()));
+  }
+
+  /**
+   * Returns {@code true} if this is {@code Ok} and the value equals {@code other}.
+   *
+   * @param other the value to compare with the success value
+   * @return {@code true} when {@code Ok} and values are equal
+   */
+  default boolean contains(@Nullable T other) {
+    return isOk() && Objects.equals(unwrap(), other);
   }
 
   /**
@@ -313,6 +355,18 @@ public sealed interface Result<T, E> permits Result.Ok, Result.Err {
       return Optional.ofNullable(unwrap());
     }
     return Optional.empty();
+  }
+
+  /**
+   * Returns the success value as {@link Option}.
+   *
+   * @return {@code Some} for {@code Ok}, otherwise {@code None}
+   */
+  default Option<T> toOption() {
+    if (isOk()) {
+      return Option.ofNullable(unwrap());
+    }
+    return Option.none();
   }
 
   /**
