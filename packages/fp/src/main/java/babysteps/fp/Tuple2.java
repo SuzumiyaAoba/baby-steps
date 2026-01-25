@@ -1,5 +1,8 @@
 package babysteps.fp;
 
+import org.jspecify.annotations.NonNull;
+import org.jspecify.annotations.Nullable;
+
 /**
  * Simple tuple of two values.
  *
@@ -8,8 +11,9 @@ package babysteps.fp;
  * @param <A> first value type
  * @param <B> second value type
  */
-public record Tuple2<A, B>(A first, B second) {
-  public static <A, B> Tuple2<A, B> of(A first, B second) {
+public record Tuple2<A, B>(@Nullable A first, @Nullable B second) {
+  public static <A, B> @NonNull Tuple2<@Nullable A, @Nullable B> of(
+      @Nullable A first, @Nullable B second) {
     return new Tuple2<>(first, second);
   }
 }

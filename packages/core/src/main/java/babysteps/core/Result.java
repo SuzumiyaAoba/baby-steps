@@ -167,7 +167,8 @@ public sealed interface Result<T, E> permits Result.Ok, Result.Err {
    * @return a mapped {@code Ok}, or the same {@code Err}
    * @throws NullPointerException if {@code mapper} is {@code null}
    */
-  default <U> Result<U, E> map(@NonNull Function<? super @Nullable T, ? extends U> mapper) {
+  default <U> Result<U, E> map(
+      @NonNull Function<? super @Nullable T, ? extends U> mapper) {
     Objects.requireNonNull(mapper, "mapper");
     if (isErr()) {
       return err(unwrapErr());
@@ -199,7 +200,7 @@ public sealed interface Result<T, E> permits Result.Ok, Result.Err {
    * @return a recovered {@code Ok} or the original {@code Ok}
    * @throws NullPointerException if {@code mapper} is {@code null}
    */
-  default Result<T, E> recover(@NonNull Function<? super E, ? extends T> mapper) {
+  default Result<T, E> recover(@NonNull Function<? super E, ? extends @Nullable T> mapper) {
     Objects.requireNonNull(mapper, "mapper");
     if (isOk()) {
       return this;
@@ -252,7 +253,8 @@ public sealed interface Result<T, E> permits Result.Ok, Result.Err {
    * @return a mapped {@code Err}, or the same {@code Ok}
    * @throws NullPointerException if {@code mapper} is {@code null}
    */
-  default <F> Result<T, F> mapErr(@NonNull Function<? super E, ? extends F> mapper) {
+  default <F> Result<T, F> mapErr(
+      @NonNull Function<? super E, ? extends F> mapper) {
     Objects.requireNonNull(mapper, "mapper");
     if (isOk()) {
       return ok(unwrap());
@@ -348,7 +350,7 @@ public sealed interface Result<T, E> permits Result.Ok, Result.Err {
    *
    * @return {@link Optional#empty()} for {@code Err}, otherwise the success value
    */
-  default Optional<T> ok() {
+  default Optional<@Nullable T> ok() {
     if (isOk()) {
       return Optional.ofNullable(unwrap());
     }
@@ -360,7 +362,7 @@ public sealed interface Result<T, E> permits Result.Ok, Result.Err {
    *
    * @return {@code Some} for {@code Ok}, otherwise {@code None}
    */
-  default Option<T> toOption() {
+  default Option<@NonNull T> toOption() {
     if (isOk()) {
       return Option.ofNullable(unwrap());
     }
@@ -372,7 +374,7 @@ public sealed interface Result<T, E> permits Result.Ok, Result.Err {
    *
    * @return {@link Optional#empty()} for {@code Ok}, otherwise the error value
    */
-  default Optional<E> err() {
+  default Optional<@NonNull E> err() {
     if (isErr()) {
       return Optional.of(unwrapErr());
     }
