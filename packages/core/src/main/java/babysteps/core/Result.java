@@ -86,16 +86,6 @@ public sealed interface Result<T, E> permits Result.Ok, Result.Err {
   }
 
   /**
-   * Returns the success value or {@code defaultValue} when this is {@code Err}.
-   *
-   * @param defaultValue the value to return for {@code Err}, possibly {@code null}
-   * @return the success value or {@code defaultValue}
-   */
-  default @Nullable T unwrapOrDefault(@Nullable T defaultValue) {
-    return unwrapOr(defaultValue);
-  }
-
-  /**
    * Returns the success value or the result of {@code fallback} when this is {@code Err}.
    *
    * @param fallback the supplier used for {@code Err}
@@ -105,17 +95,6 @@ public sealed interface Result<T, E> permits Result.Ok, Result.Err {
   default @Nullable T unwrapOrElse(@NonNull Supplier<? extends @Nullable T> fallback) {
     Objects.requireNonNull(fallback, "fallback");
     return isOk() ? unwrap() : fallback.get();
-  }
-
-  /**
-   * Returns the success value or the result of {@code fallback} when this is {@code Err}.
-   *
-   * @param fallback the supplier used for {@code Err}
-   * @return the success value or the supplier result, possibly {@code null}
-   * @throws NullPointerException if {@code fallback} is {@code null}
-   */
-  default @Nullable T unwrapOrElseGet(@NonNull Supplier<? extends @Nullable T> fallback) {
-    return unwrapOrElse(fallback);
   }
 
   /**
@@ -204,17 +183,6 @@ public sealed interface Result<T, E> permits Result.Ok, Result.Err {
   }
 
   /**
-   * Returns this {@code Ok}, or {@code other} when this is {@code Err}.
-   *
-   * @param other the fallback {@code Result}
-   * @return this result for {@code Ok}, otherwise {@code other}
-   * @throws NullPointerException if {@code other} is {@code null}
-   */
-  default Result<T, E> or(@NonNull Result<? extends T, E> other) {
-    return orElse(other);
-  }
-
-  /**
    * Returns this {@code Ok}, or a supplied {@code Result} when this is {@code Err}.
    *
    * @param fallback the supplier for the fallback result
@@ -247,18 +215,6 @@ public sealed interface Result<T, E> permits Result.Ok, Result.Err {
   }
 
   /**
-   * Maps the success value while preserving errors.
-   *
-   * @param mapper the mapper applied to the success value
-   * @param <U> the mapped value type
-   * @return a mapped {@code Ok}, or the same {@code Err}
-   * @throws NullPointerException if {@code mapper} is {@code null}
-   */
-  default <U> Result<U, E> mapOk(@NonNull Function<? super @Nullable T, ? extends U> mapper) {
-    return map(mapper);
-  }
-
-  /**
    * Fold the result into a non-{@code Result} value by handling both cases.
    *
    * @param ifErr handler for the error case
@@ -276,21 +232,6 @@ public sealed interface Result<T, E> permits Result.Ok, Result.Err {
   }
 
   /**
-   * Match the result into a value by handling both cases.
-   *
-   * @param ifErr handler for the error case
-   * @param ifOk handler for the success case
-   * @param <U> result type
-   * @return result of the chosen handler
-   * @throws NullPointerException if {@code ifErr} or {@code ifOk} is {@code null}
-   */
-  default <U> @Nullable U match(
-      @NonNull Function<? super E, ? extends U> ifErr,
-      @NonNull Function<? super @Nullable T, ? extends U> ifOk) {
-    return fold(ifErr, ifOk);
-  }
-
-  /**
    * Fold the result into a value by supplying handlers for both cases.
    *
    * @param ifErr supplier for the error case
@@ -304,20 +245,6 @@ public sealed interface Result<T, E> permits Result.Ok, Result.Err {
     Objects.requireNonNull(ifErr, "ifErr");
     Objects.requireNonNull(ifOk, "ifOk");
     return isOk() ? ifOk.get() : ifErr.get();
-  }
-
-  /**
-   * Match the result into a value by supplying handlers for both cases.
-   *
-   * @param ifErr supplier for the error case
-   * @param ifOk supplier for the success case
-   * @param <U> result type
-   * @return result of the chosen supplier
-   * @throws NullPointerException if {@code ifErr} or {@code ifOk} is {@code null}
-   */
-  default <U> @Nullable U match(
-      @NonNull Supplier<? extends U> ifErr, @NonNull Supplier<? extends U> ifOk) {
-    return fold(ifErr, ifOk);
   }
 
   /**
@@ -462,20 +389,6 @@ public sealed interface Result<T, E> permits Result.Ok, Result.Err {
   }
 
   /**
-   * Returns the mapped success value or {@code fallback} for {@code Err}.
-   *
-   * @param fallback the value to return for {@code Err}, possibly {@code null}
-   * @param mapper the mapper applied to the success value
-   * @param <U> the mapped value type
-   * @return the mapped value or {@code fallback}
-   * @throws NullPointerException if {@code mapper} is {@code null}
-   */
-  default <U> @Nullable U mapOkOr(
-      @Nullable U fallback, @NonNull Function<? super @Nullable T, ? extends U> mapper) {
-    return mapOr(fallback, mapper);
-  }
-
-  /**
    * Maps the error value while preserving success values.
    *
    * @param mapper the mapper applied to the error value
@@ -562,50 +475,6 @@ public sealed interface Result<T, E> permits Result.Ok, Result.Err {
   }
 
   /**
-   * Perform a side effect for {@code Ok} without changing the result.
-   *
-   * @param action consumer for the success value
-   * @return this result
-   * @throws NullPointerException if {@code action} is {@code null}
-   */
-  default Result<T, E> inspect(@NonNull Consumer<? super @Nullable T> action) {
-    return tap(action);
-  }
-
-  /**
-   * Perform a side effect for {@code Err} without changing the result.
-   *
-   * @param action consumer for the error value
-   * @return this result
-   * @throws NullPointerException if {@code action} is {@code null}
-   */
-  default Result<T, E> inspectErr(@NonNull Consumer<? super E> action) {
-    return tapErr(action);
-  }
-
-  /**
-   * Perform a side effect for {@code Ok} without changing the result.
-   *
-   * @param action consumer for the success value
-   * @return this result
-   * @throws NullPointerException if {@code action} is {@code null}
-   */
-  default Result<T, E> onOk(@NonNull Consumer<? super @Nullable T> action) {
-    return tap(action);
-  }
-
-  /**
-   * Perform a side effect for {@code Err} without changing the result.
-   *
-   * @param action consumer for the error value
-   * @return this result
-   * @throws NullPointerException if {@code action} is {@code null}
-   */
-  default Result<T, E> onErr(@NonNull Consumer<? super E> action) {
-    return tapErr(action);
-  }
-
-  /**
    * Returns {@code true} if this is {@code Ok} and the value equals {@code other}.
    *
    * @param other the value to compare with the success value
@@ -641,19 +510,6 @@ public sealed interface Result<T, E> permits Result.Ok, Result.Err {
     @SuppressWarnings("unchecked")
     final var next = (Result<U, E>) other;
     return next;
-  }
-
-  /**
-   * Returns the mapped {@code Result} for {@code Ok}, otherwise the same {@code Err}.
-   *
-   * @param mapper the mapper applied to the success value
-   * @param <U> the success value type of the mapped result
-   * @return the mapped result for {@code Ok}, otherwise the same {@code Err}
-   * @throws NullPointerException if {@code mapper} or its result is {@code null}
-   */
-  default <U> Result<U, E> andThen(
-      @NonNull Function<? super @Nullable T, ? extends Result<? extends U, E>> mapper) {
-    return flatMap(mapper);
   }
 
   /**
@@ -727,15 +583,6 @@ public sealed interface Result<T, E> permits Result.Ok, Result.Err {
   }
 
   /**
-   * Returns the success value as {@link Optional}.
-   *
-   * @return {@link Optional#empty()} for {@code Err}, otherwise the success value
-   */
-  default Optional<T> asOptional() {
-    return ok();
-  }
-
-  /**
    * Returns the success value as {@link Option}.
    *
    * @return {@code Some} for {@code Ok}, otherwise {@code None}
@@ -745,15 +592,6 @@ public sealed interface Result<T, E> permits Result.Ok, Result.Err {
       return Option.ofNullable(unwrap());
     }
     return Option.none();
-  }
-
-  /**
-   * Returns the success value as {@link Option}.
-   *
-   * @return {@code Some} for {@code Ok}, otherwise {@code None}
-   */
-  default Option<T> asOption() {
-    return toOption();
   }
 
   /**
@@ -828,22 +666,6 @@ public sealed interface Result<T, E> permits Result.Ok, Result.Err {
       return err(other.unwrapErr());
     }
     return ok(combiner.apply(unwrap(), other.unwrap()));
-  }
-
-  /**
-   * Combine two {@code Ok} values using {@code combiner}, otherwise return the first {@code Err}.
-   *
-   * @param other the other result
-   * @param combiner combiner for success values
-   * @param <U> other success value type
-   * @param <V> combined success value type
-   * @return combined {@code Ok}, or an {@code Err}
-   * @throws NullPointerException if {@code other} or {@code combiner} is {@code null}
-   */
-  default <U, V> Result<V, E> zipWith(
-      @NonNull Result<? extends U, E> other,
-      @NonNull BiFunction<? super @Nullable T, ? super @Nullable U, ? extends V> combiner) {
-    return zip(other, combiner);
   }
 
   /**

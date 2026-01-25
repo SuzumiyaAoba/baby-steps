@@ -28,22 +28,6 @@ class ConsumersTest {
   }
 
   @Test
-  void compose_expectedInvokeBothConsumers() {
-    // Arrange
-    final var left = new AtomicReference<String>();
-    final var right = new AtomicReference<String>();
-    final var sut =
-        Consumers.compose(value -> left.set("left:" + value), value -> right.set("right:" + value));
-
-    // Act
-    sut.accept("value");
-
-    // Assert
-    softly.assertThat(left.get()).isEqualTo("left:value");
-    softly.assertThat(right.get()).isEqualTo("right:value");
-  }
-
-  @Test
   void teeAll_expectedInvokeAllConsumers() {
     // Arrange
     final var left = new AtomicReference<String>();

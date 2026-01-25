@@ -172,17 +172,6 @@ public sealed interface Option<T> permits Option.Some, Option.None {
   }
 
   /**
-   * Return this Option when present, otherwise use a supplier for the fallback.
-   *
-   * @param supplier supplier for alternative Option
-   * @return this or supplied fallback
-   * @throws NullPointerException if {@code supplier} or its result is {@code null}
-   */
-  default @NonNull Option<T> or(@NonNull Supplier<? extends Option<? extends T>> supplier) {
-    return orElseGet(supplier);
-  }
-
-  /**
    * Return the value when present or throw a supplied exception when empty.
    *
    * @param exceptionSupplier supplier for exception
@@ -197,16 +186,6 @@ public sealed interface Option<T> permits Option.Some, Option.None {
       return get();
     }
     throw exceptionSupplier.get();
-  }
-
-  /**
-   * Return the value when present or throw {@link NoSuchElementException} when empty.
-   *
-   * @return present value
-   * @throws NoSuchElementException when empty
-   */
-  default @Nullable T orElseThrow() {
-    return get();
   }
 
   /**

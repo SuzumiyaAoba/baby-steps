@@ -376,53 +376,6 @@ class OptionTest {
   }
 
   @Test
-  void or_withNone_expectedFallback() {
-    // Arrange
-    final var sut = Option.<String>none();
-
-    // Act
-    final var result = sut.or(() -> Option.some("fallback"));
-
-    // Assert
-    softly.assertThat(result.get()).isEqualTo("fallback");
-  }
-
-  @Test
-  void or_withSome_expectedOriginalAndSupplierNotCalled() {
-    // Arrange
-    final var called = new AtomicBoolean(false);
-    final var sut = Option.some("value");
-
-    // Act
-    final var result =
-        sut.or(
-            () -> {
-              called.set(true);
-              return Option.some("fallback");
-            });
-
-    // Assert
-    softly.assertThat(result.get()).isEqualTo("value");
-    softly.assertThat(called).isFalse();
-  }
-
-  @Test
-  @SuppressWarnings("ConstantConditions")
-  void or_withNullSupplier_expectedException() {
-    // Arrange
-    final var sut = Option.<String>none();
-
-    // Act
-    final var action = (ThrowingCallable) () -> sut.or(null);
-
-    // Assert
-    softly
-        .assertThatThrownBy(action)
-        .isInstanceOf(NullPointerException.class)
-        .hasMessage("supplier");
-  }
-
-  @Test
   void fold_withNone_expectedEmptyValue() {
     // Arrange
     final var sut = Option.<String>none();
@@ -479,33 +432,6 @@ class OptionTest {
     // Assert
     softly.assertThat(result).isEqualTo("value");
     softly.assertThat(called).isFalse();
-  }
-
-  @Test
-  void orElseThrow_withSome_expectedValue() {
-    // Arrange
-    final var sut = Option.some("value");
-
-    // Act
-    final var result = sut.orElseThrow();
-
-    // Assert
-    softly.assertThat(result).isEqualTo("value");
-  }
-
-  @Test
-  void orElseThrow_withNone_expectedNoSuchElementException() {
-    // Arrange
-    final var sut = Option.<String>none();
-
-    // Act
-    final var action = (ThrowingCallable) sut::orElseThrow;
-
-    // Assert
-    softly
-        .assertThatThrownBy(action)
-        .isInstanceOf(NoSuchElementException.class)
-        .hasMessage("Option is empty");
   }
 
   @Test

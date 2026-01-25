@@ -141,30 +141,6 @@ class ResultTest {
   }
 
   @Test
-  void unwrapOrDefault_withOk_expectedValue() {
-    // Arrange
-    final var sut = Result.ok("value");
-
-    // Act
-    final var result = sut.unwrapOrDefault("fallback");
-
-    // Assert
-    softly.assertThat(result).isEqualTo("value");
-  }
-
-  @Test
-  void unwrapOrDefault_withErr_expectedFallback() {
-    // Arrange
-    final var sut = Result.<String, String>err("error");
-
-    // Act
-    final var result = sut.unwrapOrDefault("fallback");
-
-    // Assert
-    softly.assertThat(result).isEqualTo("fallback");
-  }
-
-  @Test
   void unwrapOrElse_withOk_expectedValueAndSupplierNotCalled() {
     // Arrange
     final var called = new AtomicBoolean(false);
@@ -192,44 +168,6 @@ class ResultTest {
     // Act
     final var result =
         sut.unwrapOrElse(
-            () -> {
-              called.set(true);
-              return "fallback";
-            });
-
-    // Assert
-    softly.assertThat(result).isEqualTo("fallback");
-    softly.assertThat(called).isTrue();
-  }
-
-  @Test
-  void unwrapOrElseGet_withOk_expectedValueAndSupplierNotCalled() {
-    // Arrange
-    final var called = new AtomicBoolean(false);
-    final var sut = Result.ok("value");
-
-    // Act
-    final var result =
-        sut.unwrapOrElseGet(
-            () -> {
-              called.set(true);
-              return "fallback";
-            });
-
-    // Assert
-    softly.assertThat(result).isEqualTo("value");
-    softly.assertThat(called).isFalse();
-  }
-
-  @Test
-  void unwrapOrElseGet_withErr_expectedFallback() {
-    // Arrange
-    final var called = new AtomicBoolean(false);
-    final var sut = Result.<String, String>err("error");
-
-    // Act
-    final var result =
-        sut.unwrapOrElseGet(
             () -> {
               called.set(true);
               return "fallback";
@@ -396,70 +334,6 @@ class ResultTest {
 
     // Assert
     softly.assertThat(result).isEqualTo("err:error");
-  }
-
-  @Test
-  void match_withOk_expectedMappedValue() {
-    // Arrange
-    final var sut = Result.<String, String>ok("value");
-
-    // Act
-    final var result = sut.match(error -> "err:" + error, value -> "ok:" + value);
-
-    // Assert
-    softly.assertThat(result).isEqualTo("ok:value");
-  }
-
-  @Test
-  void match_withErr_expectedMappedValue() {
-    // Arrange
-    final var sut = Result.<String, String>err("error");
-
-    // Act
-    final var result = sut.match(error -> "err:" + error, value -> "ok:" + value);
-
-    // Assert
-    softly.assertThat(result).isEqualTo("err:error");
-  }
-
-  @Test
-  void match_withSuppliersOk_expectedOkSupplier() {
-    // Arrange
-    final var called = new AtomicBoolean(false);
-    final var sut = Result.<String, String>ok("value");
-
-    // Act
-    final var result =
-        sut.match(
-            () -> {
-              called.set(true);
-              return "err";
-            },
-            () -> "ok");
-
-    // Assert
-    softly.assertThat(result).isEqualTo("ok");
-    softly.assertThat(called).isFalse();
-  }
-
-  @Test
-  void match_withSuppliersErr_expectedErrSupplier() {
-    // Arrange
-    final var called = new AtomicBoolean(false);
-    final var sut = Result.<String, String>err("error");
-
-    // Act
-    final var result =
-        sut.match(
-            () -> "err",
-            () -> {
-              called.set(true);
-              return "ok";
-            });
-
-    // Assert
-    softly.assertThat(result).isEqualTo("err");
-    softly.assertThat(called).isFalse();
   }
 
   @Test
@@ -710,30 +584,6 @@ class ResultTest {
   }
 
   @Test
-  void mapOkOr_withOk_expectedMappedValue() {
-    // Arrange
-    final var sut = Result.<String, String>ok("value");
-
-    // Act
-    final var result = sut.mapOkOr("fallback", String::length);
-
-    // Assert
-    softly.assertThat(result).isEqualTo(5);
-  }
-
-  @Test
-  void mapOkOr_withErr_expectedFallback() {
-    // Arrange
-    final var sut = Result.<String, String>err("error");
-
-    // Act
-    final var result = sut.mapOkOr("fallback", String::length);
-
-    // Assert
-    softly.assertThat(result).isEqualTo("fallback");
-  }
-
-  @Test
   void mapErrOr_withErr_expectedMappedValue() {
     // Arrange
     final var sut = Result.<String, String>err("error");
@@ -862,34 +712,6 @@ class ResultTest {
   }
 
   @Test
-  void inspect_withOk_expectedConsumerInvocation() {
-    // Arrange
-    final var seen = new AtomicReference<String>();
-    final var sut = Result.<String, String>ok("value");
-
-    // Act
-    final var result = sut.inspect(seen::set);
-
-    // Assert
-    softly.assertThat(result).isSameAs(sut);
-    softly.assertThat(seen.get()).isEqualTo("value");
-  }
-
-  @Test
-  void inspectErr_withErr_expectedConsumerInvocation() {
-    // Arrange
-    final var seen = new AtomicReference<String>();
-    final var sut = Result.<String, String>err("error");
-
-    // Act
-    final var result = sut.inspectErr(seen::set);
-
-    // Assert
-    softly.assertThat(result).isSameAs(sut);
-    softly.assertThat(seen.get()).isEqualTo("error");
-  }
-
-  @Test
   void tapBoth_withOk_expectedOkConsumerInvocation() {
     // Arrange
     final var okSeen = new AtomicReference<String>();
@@ -922,34 +744,6 @@ class ResultTest {
   }
 
   @Test
-  void onOk_withOk_expectedConsumerInvocation() {
-    // Arrange
-    final var seen = new AtomicReference<String>();
-    final var sut = Result.<String, String>ok("value");
-
-    // Act
-    final var result = sut.onOk(seen::set);
-
-    // Assert
-    softly.assertThat(result).isSameAs(sut);
-    softly.assertThat(seen.get()).isEqualTo("value");
-  }
-
-  @Test
-  void onErr_withErr_expectedConsumerInvocation() {
-    // Arrange
-    final var seen = new AtomicReference<String>();
-    final var sut = Result.<String, String>err("error");
-
-    // Act
-    final var result = sut.onErr(seen::set);
-
-    // Assert
-    softly.assertThat(result).isSameAs(sut);
-    softly.assertThat(seen.get()).isEqualTo("error");
-  }
-
-  @Test
   void map_withErr_expectedErrAndMapperNotCalled() {
     // Arrange
     final var mapped = new AtomicBoolean(false);
@@ -958,38 +752,6 @@ class ResultTest {
     // Act
     final var result =
         sut.map(
-            value -> {
-              mapped.set(true);
-              return value.length();
-            });
-
-    // Assert
-    softly.assertThat(result.isErr()).isTrue();
-    softly.assertThat(result.unwrapErr()).isEqualTo("error");
-    softly.assertThat(mapped).isFalse();
-  }
-
-  @Test
-  void mapOk_withOk_expectedMappedValue() {
-    // Arrange
-    final var sut = Result.<String, String>ok("value");
-
-    // Act
-    final var result = sut.mapOk(String::length);
-
-    // Assert
-    softly.assertThat(result.unwrap()).isEqualTo(5);
-  }
-
-  @Test
-  void mapOk_withErr_expectedErrAndMapperNotCalled() {
-    // Arrange
-    final var mapped = new AtomicBoolean(false);
-    final var sut = Result.<String, String>err("error");
-
-    // Act
-    final var result =
-        sut.mapOk(
             value -> {
               mapped.set(true);
               return value.length();
@@ -1073,32 +835,6 @@ class ResultTest {
   }
 
   @Test
-  void or_withErr_expectedFallback() {
-    // Arrange
-    final var sut = Result.<String, String>err("error");
-    final var fallback = Result.<String, String>ok("fallback");
-
-    // Act
-    final var result = sut.or(fallback);
-
-    // Assert
-    softly.assertThat(result.unwrap()).isEqualTo("fallback");
-  }
-
-  @Test
-  void or_withOk_expectedOriginal() {
-    // Arrange
-    final var sut = Result.<String, String>ok("value");
-    final var fallback = Result.<String, String>ok("fallback");
-
-    // Act
-    final var result = sut.or(fallback);
-
-    // Assert
-    softly.assertThat(result.unwrap()).isEqualTo("value");
-  }
-
-  @Test
   void orElse_withErr_expectedFallback() {
     // Arrange
     final var sut = Result.<String, String>err("error");
@@ -1173,38 +909,6 @@ class ResultTest {
 
     // Assert
     softly.assertThat(result.unwrapErr()).isEqualTo("error");
-  }
-
-  @Test
-  void andThen_withOk_expectedMappedValue() {
-    // Arrange
-    final var sut = Result.<String, String>ok("value");
-
-    // Act
-    final var result = sut.andThen(value -> Result.ok(value + "!"));
-
-    // Assert
-    softly.assertThat(result.unwrap()).isEqualTo("value!");
-  }
-
-  @Test
-  void andThen_withErr_expectedErrAndMapperNotCalled() {
-    // Arrange
-    final var called = new AtomicBoolean(false);
-    final var sut = Result.<String, String>err("error");
-
-    // Act
-    final var result =
-        sut.andThen(
-            value -> {
-              called.set(true);
-              return Result.ok(value + "!");
-            });
-
-    // Assert
-    softly.assertThat(result.isErr()).isTrue();
-    softly.assertThat(result.unwrapErr()).isEqualTo("error");
-    softly.assertThat(called).isFalse();
   }
 
   @Test
@@ -1442,19 +1146,6 @@ class ResultTest {
   }
 
   @Test
-  void asOptional_withOk_expectedOptionalPresent() {
-    // Arrange
-    final var sut = Result.<String, String>ok("value");
-
-    // Act
-    final var result = sut.asOptional();
-
-    // Assert
-    softly.assertThat(result).isPresent();
-    softly.assertThat(result.get()).isEqualTo("value");
-  }
-
-  @Test
   void toOption_withOk_expectedSome() {
     // Arrange
     final var sut = Result.<String, String>ok("value");
@@ -1489,19 +1180,6 @@ class ResultTest {
 
     // Assert
     softly.assertThat(result.isEmpty()).isTrue();
-  }
-
-  @Test
-  void asOption_withOk_expectedSome() {
-    // Arrange
-    final var sut = Result.<String, String>ok("value");
-
-    // Act
-    final var result = sut.asOption();
-
-    // Assert
-    softly.assertThat(result.isPresent()).isTrue();
-    softly.assertThat(result.get()).isEqualTo("value");
   }
 
   @Test
@@ -1618,19 +1296,6 @@ class ResultTest {
 
     // Assert
     softly.assertThat(result.unwrapErr()).isEqualTo("other");
-  }
-
-  @Test
-  void zipWith_withOk_expectedCombinedValue() {
-    // Arrange
-    final var sut = Result.<String, String>ok("value");
-    final var other = Result.<Integer, String>ok(2);
-
-    // Act
-    final var result = sut.zipWith(other, (left, right) -> left + right);
-
-    // Assert
-    softly.assertThat(result.unwrap()).isEqualTo("value2");
   }
 
   @Test
@@ -2026,12 +1691,12 @@ class ResultTest {
 
   @Test
   @SuppressWarnings("ConstantConditions")
-  void or_withNullOther_expectedException() {
+  void orElse_withNullOther_expectedException() {
     // Arrange
     final var sut = Result.<String, String>err("error");
 
     // Act
-    final var action = (ThrowingCallable) () -> sut.or(null);
+    final var action = (ThrowingCallable) () -> sut.orElse(null);
 
     // Assert
     softly
