@@ -25,7 +25,7 @@
 - [ ] Predicates
   - [x] and/or/not combinators
 - [ ] Consumers
-  - [ ] tee/tap for side effects without breaking chains
+  - [x] tee/tap for side effects without breaking chains
 
 ## Mid-Term Scope (collections + stream)
 - [ ] Immutable collections
