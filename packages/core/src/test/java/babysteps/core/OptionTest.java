@@ -416,7 +416,8 @@ class OptionTest {
     final var action = (ThrowingCallable) () -> sut.or(null);
 
     // Assert
-    softly.assertThatThrownBy(action)
+    softly
+        .assertThatThrownBy(action)
         .isInstanceOf(NullPointerException.class)
         .hasMessage("supplier");
   }
@@ -501,7 +502,8 @@ class OptionTest {
     final var action = (ThrowingCallable) sut::orElseThrow;
 
     // Assert
-    softly.assertThatThrownBy(action)
+    softly
+        .assertThatThrownBy(action)
         .isInstanceOf(NoSuchElementException.class)
         .hasMessage("Option is empty");
   }
@@ -791,9 +793,7 @@ class OptionTest {
     final var action = (ThrowingCallable) () -> sut.mapOr(0, null);
 
     // Assert
-    softly.assertThatThrownBy(action)
-        .isInstanceOf(NullPointerException.class)
-        .hasMessage("mapper");
+    softly.assertThatThrownBy(action).isInstanceOf(NullPointerException.class).hasMessage("mapper");
   }
 
   @Test
@@ -838,9 +838,7 @@ class OptionTest {
     final var action = (ThrowingCallable) () -> sut.mapOrElse(() -> 0, null);
 
     // Assert
-    softly.assertThatThrownBy(action)
-        .isInstanceOf(NullPointerException.class)
-        .hasMessage("mapper");
+    softly.assertThatThrownBy(action).isInstanceOf(NullPointerException.class).hasMessage("mapper");
   }
 
   @Test
@@ -853,7 +851,8 @@ class OptionTest {
     final var action = (ThrowingCallable) () -> sut.mapOrElse(null, String::length);
 
     // Assert
-    softly.assertThatThrownBy(action)
+    softly
+        .assertThatThrownBy(action)
         .isInstanceOf(NullPointerException.class)
         .hasMessage("fallback");
   }
@@ -886,7 +885,8 @@ class OptionTest {
     final var action = (ThrowingCallable) () -> Option.fromOptional(null);
 
     // Assert
-    softly.assertThatThrownBy(action)
+    softly
+        .assertThatThrownBy(action)
         .isInstanceOf(NullPointerException.class)
         .hasMessage("optional");
   }
@@ -901,7 +901,8 @@ class OptionTest {
     final var action = (ThrowingCallable) () -> sut.getOrElseGet(null);
 
     // Assert
-    softly.assertThatThrownBy(action)
+    softly
+        .assertThatThrownBy(action)
         .isInstanceOf(NullPointerException.class)
         .hasMessage("supplier");
   }
@@ -916,7 +917,8 @@ class OptionTest {
     final var action = (ThrowingCallable) () -> sut.orElse(null);
 
     // Assert
-    softly.assertThatThrownBy(action)
+    softly
+        .assertThatThrownBy(action)
         .isInstanceOf(NullPointerException.class)
         .hasMessage("fallback");
   }
@@ -931,7 +933,8 @@ class OptionTest {
     final var action = (ThrowingCallable) () -> sut.orElseGet(null);
 
     // Assert
-    softly.assertThatThrownBy(action)
+    softly
+        .assertThatThrownBy(action)
         .isInstanceOf(NullPointerException.class)
         .hasMessage("supplier");
   }
@@ -946,7 +949,8 @@ class OptionTest {
     final var action = (ThrowingCallable) () -> sut.orElseThrow(null);
 
     // Assert
-    softly.assertThatThrownBy(action)
+    softly
+        .assertThatThrownBy(action)
         .isInstanceOf(NullPointerException.class)
         .hasMessage("exceptionSupplier");
   }
@@ -961,7 +965,8 @@ class OptionTest {
     final var action = (ThrowingCallable) () -> sut.fold(null, value -> value);
 
     // Assert
-    softly.assertThatThrownBy(action)
+    softly
+        .assertThatThrownBy(action)
         .isInstanceOf(NullPointerException.class)
         .hasMessage("ifEmpty");
   }
@@ -976,7 +981,8 @@ class OptionTest {
     final var action = (ThrowingCallable) () -> sut.fold(() -> "empty", null);
 
     // Assert
-    softly.assertThatThrownBy(action)
+    softly
+        .assertThatThrownBy(action)
         .isInstanceOf(NullPointerException.class)
         .hasMessage("ifPresent");
   }
@@ -991,7 +997,8 @@ class OptionTest {
     final var action = (ThrowingCallable) () -> sut.filter(null);
 
     // Assert
-    softly.assertThatThrownBy(action)
+    softly
+        .assertThatThrownBy(action)
         .isInstanceOf(NullPointerException.class)
         .hasMessage("predicate");
   }
@@ -1006,7 +1013,8 @@ class OptionTest {
     final var action = (ThrowingCallable) () -> sut.filterNot(null);
 
     // Assert
-    softly.assertThatThrownBy(action)
+    softly
+        .assertThatThrownBy(action)
         .isInstanceOf(NullPointerException.class)
         .hasMessage("predicate");
   }
@@ -1021,9 +1029,7 @@ class OptionTest {
     final var action = (ThrowingCallable) () -> sut.map(null);
 
     // Assert
-    softly.assertThatThrownBy(action)
-        .isInstanceOf(NullPointerException.class)
-        .hasMessage("mapper");
+    softly.assertThatThrownBy(action).isInstanceOf(NullPointerException.class).hasMessage("mapper");
   }
 
   @Test
@@ -1036,9 +1042,7 @@ class OptionTest {
     final var action = (ThrowingCallable) () -> sut.flatMap(null);
 
     // Assert
-    softly.assertThatThrownBy(action)
-        .isInstanceOf(NullPointerException.class)
-        .hasMessage("mapper");
+    softly.assertThatThrownBy(action).isInstanceOf(NullPointerException.class).hasMessage("mapper");
   }
 
   @Test
@@ -1050,9 +1054,7 @@ class OptionTest {
     final var action = (ThrowingCallable) () -> sut.flatMap(value -> null);
 
     // Assert
-    softly.assertThatThrownBy(action)
-        .isInstanceOf(NullPointerException.class)
-        .hasMessage("mapped");
+    softly.assertThatThrownBy(action).isInstanceOf(NullPointerException.class).hasMessage("mapped");
   }
 
   @Test
@@ -1065,9 +1067,7 @@ class OptionTest {
     final var action = (ThrowingCallable) () -> sut.peek(null);
 
     // Assert
-    softly.assertThatThrownBy(action)
-        .isInstanceOf(NullPointerException.class)
-        .hasMessage("action");
+    softly.assertThatThrownBy(action).isInstanceOf(NullPointerException.class).hasMessage("action");
   }
 
   @Test
@@ -1080,9 +1080,7 @@ class OptionTest {
     final var action = (ThrowingCallable) () -> sut.ifPresent(null);
 
     // Assert
-    softly.assertThatThrownBy(action)
-        .isInstanceOf(NullPointerException.class)
-        .hasMessage("action");
+    softly.assertThatThrownBy(action).isInstanceOf(NullPointerException.class).hasMessage("action");
   }
 
   @Test
@@ -1095,9 +1093,7 @@ class OptionTest {
     final var action = (ThrowingCallable) () -> sut.ifPresentOrElse(null, () -> {});
 
     // Assert
-    softly.assertThatThrownBy(action)
-        .isInstanceOf(NullPointerException.class)
-        .hasMessage("action");
+    softly.assertThatThrownBy(action).isInstanceOf(NullPointerException.class).hasMessage("action");
   }
 
   @Test
@@ -1110,7 +1106,8 @@ class OptionTest {
     final var action = (ThrowingCallable) () -> sut.ifPresentOrElse(value -> {}, null);
 
     // Assert
-    softly.assertThatThrownBy(action)
+    softly
+        .assertThatThrownBy(action)
         .isInstanceOf(NullPointerException.class)
         .hasMessage("emptyAction");
   }
@@ -1125,7 +1122,8 @@ class OptionTest {
     final var action = (ThrowingCallable) () -> sut.exists(null);
 
     // Assert
-    softly.assertThatThrownBy(action)
+    softly
+        .assertThatThrownBy(action)
         .isInstanceOf(NullPointerException.class)
         .hasMessage("predicate");
   }
@@ -1140,7 +1138,8 @@ class OptionTest {
     final var action = (ThrowingCallable) () -> sut.forAll(null);
 
     // Assert
-    softly.assertThatThrownBy(action)
+    softly
+        .assertThatThrownBy(action)
         .isInstanceOf(NullPointerException.class)
         .hasMessage("predicate");
   }
@@ -1155,7 +1154,8 @@ class OptionTest {
     final var action = (ThrowingCallable) () -> sut.toResult(null);
 
     // Assert
-    softly.assertThatThrownBy(action)
+    softly
+        .assertThatThrownBy(action)
         .isInstanceOf(NullPointerException.class)
         .hasMessage("ifEmpty");
   }

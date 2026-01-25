@@ -33,9 +33,7 @@ class ConsumersTest {
     final var left = new AtomicReference<String>();
     final var right = new AtomicReference<String>();
     final var sut =
-        Consumers.compose(
-            value -> left.set("left:" + value),
-            value -> right.set("right:" + value));
+        Consumers.compose(value -> left.set("left:" + value), value -> right.set("right:" + value));
 
     // Act
     sut.accept("value");

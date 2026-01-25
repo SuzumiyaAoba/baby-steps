@@ -301,13 +301,11 @@ class ResultTest {
     final var sut = Result.<String, String>err("error");
 
     // Act
-    final var action = (ThrowingCallable) () -> sut.orElseThrow(IllegalStateException::new);
+    final var action =
+        (ThrowingCallable) () -> sut.orElseThrow(() -> new IllegalStateException("error"));
 
     // Assert
-    softly
-        .assertThatThrownBy(action)
-        .isInstanceOf(IllegalStateException.class)
-        .hasMessage("error");
+    softly.assertThatThrownBy(action).isInstanceOf(IllegalStateException.class).hasMessage("error");
   }
 
   @Test
@@ -632,9 +630,7 @@ class ResultTest {
     final var action = (ThrowingCallable) sut::swap;
 
     // Assert
-    softly.assertThatThrownBy(action)
-        .isInstanceOf(NullPointerException.class)
-        .hasMessage("value");
+    softly.assertThatThrownBy(action).isInstanceOf(NullPointerException.class).hasMessage("value");
   }
 
   @Test
@@ -1304,9 +1300,7 @@ class ResultTest {
     final var action = (ThrowingCallable) sut::flatten;
 
     // Assert
-    softly.assertThatThrownBy(action)
-        .isInstanceOf(NullPointerException.class)
-        .hasMessage("value");
+    softly.assertThatThrownBy(action).isInstanceOf(NullPointerException.class).hasMessage("value");
   }
 
   @Test
@@ -1533,7 +1527,8 @@ class ResultTest {
 
     // Assert
     softly.assertThat(result.isFailure()).isTrue();
-    softly.assertThat(result.getCause())
+    softly
+        .assertThat(result.getCause())
         .isInstanceOf(IllegalStateException.class)
         .hasMessage("error");
   }
@@ -1942,9 +1937,7 @@ class ResultTest {
     final var action = (ThrowingCallable) () -> sut.recoverWith(null);
 
     // Assert
-    softly.assertThatThrownBy(action)
-        .isInstanceOf(NullPointerException.class)
-        .hasMessage("mapper");
+    softly.assertThatThrownBy(action).isInstanceOf(NullPointerException.class).hasMessage("mapper");
   }
 
   @Test
@@ -1957,9 +1950,7 @@ class ResultTest {
     final var action = (ThrowingCallable) () -> sut.toTry(null);
 
     // Assert
-    softly.assertThatThrownBy(action)
-        .isInstanceOf(NullPointerException.class)
-        .hasMessage("mapper");
+    softly.assertThatThrownBy(action).isInstanceOf(NullPointerException.class).hasMessage("mapper");
   }
 
   @Test
@@ -1971,7 +1962,8 @@ class ResultTest {
     final var action = (ThrowingCallable) () -> sut.toTry(error -> null);
 
     // Assert
-    softly.assertThatThrownBy(action)
+    softly
+        .assertThatThrownBy(action)
         .isInstanceOf(NullPointerException.class)
         .hasMessage("throwable");
   }
@@ -1986,9 +1978,7 @@ class ResultTest {
     final var action = (ThrowingCallable) () -> sut.tap(null);
 
     // Assert
-    softly.assertThatThrownBy(action)
-        .isInstanceOf(NullPointerException.class)
-        .hasMessage("action");
+    softly.assertThatThrownBy(action).isInstanceOf(NullPointerException.class).hasMessage("action");
   }
 
   @Test
@@ -2001,9 +1991,7 @@ class ResultTest {
     final var action = (ThrowingCallable) () -> sut.tapErr(null);
 
     // Assert
-    softly.assertThatThrownBy(action)
-        .isInstanceOf(NullPointerException.class)
-        .hasMessage("action");
+    softly.assertThatThrownBy(action).isInstanceOf(NullPointerException.class).hasMessage("action");
   }
 
   @Test
@@ -2016,9 +2004,7 @@ class ResultTest {
     final var action = (ThrowingCallable) () -> sut.zip(null, (left, right) -> left);
 
     // Assert
-    softly.assertThatThrownBy(action)
-        .isInstanceOf(NullPointerException.class)
-        .hasMessage("other");
+    softly.assertThatThrownBy(action).isInstanceOf(NullPointerException.class).hasMessage("other");
   }
 
   @Test
@@ -2032,7 +2018,8 @@ class ResultTest {
     final var action = (ThrowingCallable) () -> sut.zip(other, null);
 
     // Assert
-    softly.assertThatThrownBy(action)
+    softly
+        .assertThatThrownBy(action)
         .isInstanceOf(NullPointerException.class)
         .hasMessage("combiner");
   }
@@ -2047,7 +2034,8 @@ class ResultTest {
     final var action = (ThrowingCallable) () -> sut.or(null);
 
     // Assert
-    softly.assertThatThrownBy(action)
+    softly
+        .assertThatThrownBy(action)
         .isInstanceOf(NullPointerException.class)
         .hasMessage("fallback");
   }
