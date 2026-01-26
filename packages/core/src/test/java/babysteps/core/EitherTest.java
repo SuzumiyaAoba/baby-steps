@@ -684,6 +684,20 @@ class EitherTest {
   }
 
   @Test
+  void peekLeft_withLeftNull_expectedActionCalledWithNull() {
+    // Arrange
+    final var captured = new AtomicReference<String>("sentinel");
+    final var sut = Either.<String, String>left(null);
+
+    // Act
+    final var result = sut.peekLeft(captured::set);
+
+    // Assert
+    softly.assertThat(captured.get()).isNull();
+    softly.assertThat(result).isSameAs(sut);
+  }
+
+  @Test
   void peekRight_withRight_expectedActionCalled() {
     // Arrange
     final var captured = new AtomicReference<String>();
