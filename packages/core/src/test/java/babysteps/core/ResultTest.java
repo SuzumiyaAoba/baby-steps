@@ -1570,13 +1570,18 @@ class ResultTest {
 
   @Test
   @SuppressWarnings("ConstantConditions")
-  void err_withNull_expectedException() {
+  void err_withNull_expectedErrWithNull() {
     // Arrange
+    final var sut = Result.<String, String>err(null);
+
     // Act
-    final var action = (ThrowingCallable) () -> Result.err(null);
+    final var error = sut.unwrapErr();
+    final var optional = sut.err();
 
     // Assert
-    softly.assertThatThrownBy(action).isInstanceOf(NullPointerException.class).hasMessage("error");
+    softly.assertThat(error).isNull();
+    softly.assertThat(sut.isErr()).isTrue();
+    softly.assertThat(optional).isEmpty();
   }
 
   @Test

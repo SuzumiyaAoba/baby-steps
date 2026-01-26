@@ -13,15 +13,28 @@
 - [ ] Result
   - [x] Ok/Err, map/mapErr, flatMap, unwrap helpers
   - [x] fold, recover, toOption, contains, equals/hashCode tests
+- [ ] Either
+  - [ ] Left/Right, map/mapLeft/mapRight, fold, swap
+  - [ ] toOption/toResult bridges, contains, equals/hashCode tests
 - [ ] Try
   - [x] Capture checked exceptions into Result-like model
 - [ ] Unit
   - [x] Singleton type to model void in FP pipelines
+- [ ] Validated
+  - [ ] Ok/Err with error accumulation, map/mapErr, fold
+  - [ ] toResult/toOption bridges, combine helpers, equals/hashCode tests
+- [ ] NonEmptyList
+  - [ ] Factory/append/prepend, map/flatMap, toList
+  - [ ] Interop with Validated for error accumulation
+- [ ] Tuples
+  - [ ] Pair/Triple with mapLeft/mapRight (Pair) and map, equals/hashCode tests
 
 ### fp
 - [ ] Functions
   - [x] compose/pipe/curry
   - [x] tupled/untupled, flip, partial, memoize
+- [ ] Checked functional interfaces
+  - [ ] CheckedSupplier/Function/Consumer and helpers to lift into Result/Try
 - [ ] Predicates
   - [x] and/or/not combinators
 - [ ] Consumers
