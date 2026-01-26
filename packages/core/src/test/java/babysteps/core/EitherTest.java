@@ -698,6 +698,19 @@ class EitherTest {
   }
 
   @Test
+  void peekLeft_withRight_expectedActionNotCalled() {
+    // Arrange
+    final var called = new AtomicBoolean(false);
+    final var sut = Either.<String, String>right("value");
+
+    // Act
+    sut.peekLeft(value -> called.set(true));
+
+    // Assert
+    softly.assertThat(called).isFalse();
+  }
+
+  @Test
   void peekRight_withRight_expectedActionCalled() {
     // Arrange
     final var captured = new AtomicReference<String>();
