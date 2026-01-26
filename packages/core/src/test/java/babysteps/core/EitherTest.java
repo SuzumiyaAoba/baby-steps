@@ -618,6 +618,19 @@ class EitherTest {
   }
 
   @Test
+  @SuppressWarnings("ConstantConditions")
+  void mapRight_withNullMapper_expectedThrows() {
+    // Arrange
+    final var sut = Either.<String, String>right("value");
+
+    // Act
+    final var action = (ThrowingCallable) () -> sut.mapRight(null);
+
+    // Assert
+    softly.assertThatThrownBy(action).isInstanceOf(NullPointerException.class).hasMessage("mapper");
+  }
+
+  @Test
   void mapRight_withLeft_expectedSameLeft() {
     // Arrange
     final var sut = Either.<String, String>left("error");
