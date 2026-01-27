@@ -98,7 +98,9 @@ public sealed interface Validated<T, E> permits Validated.Ok, Validated.Err {
       @NonNull Function<? super @Nullable T, ? extends U> mapper) {
     Objects.requireNonNull(mapper, "mapper");
     if (isErr()) {
-      return errList(unwrapErrs());
+      @SuppressWarnings("unchecked")
+      final var self = (Validated<U, E>) this;
+      return self;
     }
     return ok(mapper.apply(unwrap()));
   }
@@ -115,7 +117,9 @@ public sealed interface Validated<T, E> permits Validated.Ok, Validated.Err {
       @NonNull Function<? super @Nullable E, ? extends F> mapper) {
     Objects.requireNonNull(mapper, "mapper");
     if (isOk()) {
-      return ok(unwrap());
+      @SuppressWarnings("unchecked")
+      final var self = (Validated<T, F>) this;
+      return self;
     }
     final var mapped = new ArrayList<@Nullable F>();
     for (final var error : unwrapErrs()) {
@@ -190,9 +194,13 @@ public sealed interface Validated<T, E> permits Validated.Ok, Validated.Err {
       return errList(mergeErrors(unwrapErrs(), other.unwrapErrs()));
     }
     if (isErr()) {
-      return errList(unwrapErrs());
+      @SuppressWarnings("unchecked")
+      final var self = (Validated<V, E>) this;
+      return self;
     }
-    return errList(other.unwrapErrs());
+    @SuppressWarnings("unchecked")
+    final var otherErr = (Validated<V, E>) other;
+    return otherErr;
   }
 
   /**
