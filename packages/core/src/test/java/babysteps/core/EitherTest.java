@@ -1326,41 +1326,51 @@ class EitherTest {
   @Test
   void mapRightOrElse_withRight_expectedMappedAndSupplierNotCalled() {
     // Arrange
-    final var called = new AtomicBoolean(false);
+    final var fallbackCalled = new AtomicBoolean(false);
+    final var mapperCalled = new AtomicBoolean(false);
     final var sut = Either.<String, String>right("value");
 
     // Act
     final var result =
         sut.mapRightOrElse(
             () -> {
-              called.set(true);
+              fallbackCalled.set(true);
               return "fallback";
             },
-            value -> value + "!");
+            value -> {
+              mapperCalled.set(true);
+              return value + "!";
+            });
 
     // Assert
     softly.assertThat(result).isEqualTo("value!");
-    softly.assertThat(called).isFalse();
+    softly.assertThat(fallbackCalled).isFalse();
+    softly.assertThat(mapperCalled).isTrue();
   }
 
   @Test
   void mapRightOrElse_withLeft_expectedFallback() {
     // Arrange
-    final var called = new AtomicBoolean(false);
+    final var fallbackCalled = new AtomicBoolean(false);
+    final var mapperCalled = new AtomicBoolean(false);
     final var sut = Either.<String, String>left("error");
 
     // Act
     final var result =
         sut.mapRightOrElse(
-            () -> "fallback",
+            () -> {
+              fallbackCalled.set(true);
+              return "fallback";
+            },
             value -> {
-              called.set(true);
+              mapperCalled.set(true);
               return value + "!";
             });
 
     // Assert
     softly.assertThat(result).isEqualTo("fallback");
-    softly.assertThat(called).isFalse();
+    softly.assertThat(fallbackCalled).isTrue();
+    softly.assertThat(mapperCalled).isFalse();
   }
 
   @Test
@@ -1395,41 +1405,51 @@ class EitherTest {
   @Test
   void mapLeftOrElse_withLeft_expectedMappedAndSupplierNotCalled() {
     // Arrange
-    final var called = new AtomicBoolean(false);
+    final var fallbackCalled = new AtomicBoolean(false);
+    final var mapperCalled = new AtomicBoolean(false);
     final var sut = Either.<String, String>left("error");
 
     // Act
     final var result =
         sut.mapLeftOrElse(
             () -> {
-              called.set(true);
+              fallbackCalled.set(true);
               return "fallback";
             },
-            value -> value + "!");
+            value -> {
+              mapperCalled.set(true);
+              return value + "!";
+            });
 
     // Assert
     softly.assertThat(result).isEqualTo("error!");
-    softly.assertThat(called).isFalse();
+    softly.assertThat(fallbackCalled).isFalse();
+    softly.assertThat(mapperCalled).isTrue();
   }
 
   @Test
   void mapLeftOrElse_withRight_expectedFallback() {
     // Arrange
-    final var called = new AtomicBoolean(false);
+    final var fallbackCalled = new AtomicBoolean(false);
+    final var mapperCalled = new AtomicBoolean(false);
     final var sut = Either.<String, String>right("value");
 
     // Act
     final var result =
         sut.mapLeftOrElse(
-            () -> "fallback",
+            () -> {
+              fallbackCalled.set(true);
+              return "fallback";
+            },
             value -> {
-              called.set(true);
+              mapperCalled.set(true);
               return value + "!";
             });
 
     // Assert
     softly.assertThat(result).isEqualTo("fallback");
-    softly.assertThat(called).isFalse();
+    softly.assertThat(fallbackCalled).isTrue();
+    softly.assertThat(mapperCalled).isFalse();
   }
 
   @Test
