@@ -261,7 +261,7 @@ public sealed interface Validated<T, E> permits Validated.Ok, Validated.Err {
         errs.addAll(validation.unwrapErrs());
       }
     }
-    return new Partition<>(List.copyOf(oks), List.copyOf(errs));
+    return new Partition<>(unmodifiableCopy(oks), unmodifiableCopy(errs));
   }
 
   /**
@@ -287,7 +287,7 @@ public sealed interface Validated<T, E> permits Validated.Ok, Validated.Err {
       }
     }
     if (errors.isEmpty()) {
-      return ok(List.copyOf(values));
+      return ok(unmodifiableCopy(values));
     }
     return errList(errors);
   }
@@ -320,7 +320,7 @@ public sealed interface Validated<T, E> permits Validated.Ok, Validated.Err {
       }
     }
     if (errors.isEmpty()) {
-      return ok(List.copyOf(results));
+      return ok(unmodifiableCopy(results));
     }
     return errList(errors);
   }
@@ -364,6 +364,11 @@ public sealed interface Validated<T, E> permits Validated.Ok, Validated.Err {
 
   private static <T, E> @NonNull Validated<T, E> errList(@NonNull List<@Nullable E> errors) {
     return new Err<>(errors);
+  }
+
+  private static <T> @NonNull List<@Nullable T> unmodifiableCopy(
+      @NonNull Collection<? extends @Nullable T> values) {
+    return Collections.unmodifiableList(new ArrayList<>(values));
   }
 
   private static <E> @NonNull List<@Nullable E> mergeErrors(
