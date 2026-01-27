@@ -187,6 +187,7 @@ class EitherTest {
     // Assert
     softly.assertThat(result).isEqualTo("value");
   }
+
   @Test
   void unwrapRightOrElse_withRight_expectedValueAndSupplierNotCalled() {
     // Arrange
@@ -306,7 +307,10 @@ class EitherTest {
     final var action = (ThrowingCallable) () -> sut.orElse(null);
 
     // Assert
-    softly.assertThatThrownBy(action).isInstanceOf(NullPointerException.class).hasMessage("fallback");
+    softly
+        .assertThatThrownBy(action)
+        .isInstanceOf(NullPointerException.class)
+        .hasMessage("fallback");
   }
 
   @Test
@@ -732,10 +736,7 @@ class EitherTest {
     final var sut = Either.<String, String>left("error");
 
     // Act
-    final var result =
-        sut.tapBoth(
-            leftCaptured::set,
-            value -> rightCalled.set(true));
+    final var result = sut.tapBoth(leftCaptured::set, value -> rightCalled.set(true));
 
     // Assert
     softly.assertThat(leftCaptured.get()).isEqualTo("error");
@@ -751,10 +752,7 @@ class EitherTest {
     final var sut = Either.<String, String>right("value");
 
     // Act
-    final var result =
-        sut.tapBoth(
-            value -> leftCalled.set(true),
-            rightCaptured::set);
+    final var result = sut.tapBoth(value -> leftCalled.set(true), rightCaptured::set);
 
     // Assert
     softly.assertThat(rightCaptured.get()).isEqualTo("value");

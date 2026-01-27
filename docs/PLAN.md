@@ -20,9 +20,9 @@
   - [x] Capture checked exceptions into Result-like model
 - [ ] Unit
   - [x] Singleton type to model void in FP pipelines
-- [ ] Validated
-  - [ ] Ok/Err with error accumulation, map/mapErr, fold
-  - [ ] toResult/toOption bridges, combine helpers, equals/hashCode tests
+- [x] Validated
+  - [x] Ok/Err with error accumulation, map/mapErr, fold
+  - [x] toResult/toOption bridges, combine helpers, equals/hashCode tests
 - [ ] NonEmptyList
   - [ ] Factory/append/prepend, map/flatMap, toList
   - [ ] Interop with Validated for error accumulation
