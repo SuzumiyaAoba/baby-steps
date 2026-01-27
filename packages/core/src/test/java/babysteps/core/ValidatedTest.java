@@ -325,8 +325,8 @@ class ValidatedTest {
   @Test
   void orElse_withOk_expectedSame() {
     // Arrange
-    final var sut = Validated.ok("value");
-    final var fallback = Validated.ok("fallback");
+    final var sut = Validated.<String, String>ok("value");
+    final var fallback = Validated.<String, String>ok("fallback");
 
     // Act
     final var result = sut.orElse(fallback);
@@ -339,7 +339,7 @@ class ValidatedTest {
   void orElse_withErr_expectedFallback() {
     // Arrange
     final var sut = Validated.<String, String>err("error");
-    final var fallback = Validated.ok("fallback");
+    final var fallback = Validated.<String, String>ok("fallback");
 
     // Act
     final var result = sut.orElse(fallback);
@@ -352,14 +352,16 @@ class ValidatedTest {
   void orElseGet_withOk_expectedSame() {
     // Arrange
     final var called = new AtomicBoolean(false);
-    final var sut = Validated.ok("value");
-    final var fallback = Validated.ok("fallback");
+    final var sut = Validated.<String, String>ok("value");
+    final var fallback = Validated.<String, String>ok("fallback");
 
     // Act
-    final var result = sut.orElseGet(() -> {
-      called.set(true);
-      return fallback;
-    });
+    final var result =
+        sut.orElseGet(
+            () -> {
+              called.set(true);
+              return fallback;
+            });
 
     // Assert
     softly.assertThat(called).isFalse();
@@ -371,13 +373,15 @@ class ValidatedTest {
     // Arrange
     final var called = new AtomicBoolean(false);
     final var sut = Validated.<String, String>err("error");
-    final var fallback = Validated.ok("fallback");
+    final var fallback = Validated.<String, String>ok("fallback");
 
     // Act
-    final var result = sut.orElseGet(() -> {
-      called.set(true);
-      return fallback;
-    });
+    final var result =
+        sut.orElseGet(
+            () -> {
+              called.set(true);
+              return fallback;
+            });
 
     // Assert
     softly.assertThat(called).isTrue();
@@ -458,8 +462,7 @@ class ValidatedTest {
   void ap_withOkFunctionAndOkValue_expectedOk() {
     // Arrange
     final var value = Validated.<String, String>ok("value");
-    final var function =
-        Validated.<Function<String, String>, String>ok(input -> input + "!");
+    final var function = Validated.<Function<String, String>, String>ok(input -> input + "!");
 
     // Act
     final var result = value.ap(function);
@@ -487,8 +490,7 @@ class ValidatedTest {
   void ap_withOkFunctionAndErrValue_expectedErr() {
     // Arrange
     final var value = Validated.<String, String>err("error2");
-    final var function =
-        Validated.<Function<String, String>, String>ok(input -> input + "!");
+    final var function = Validated.<Function<String, String>, String>ok(input -> input + "!");
 
     // Act
     final var result = value.ap(function);

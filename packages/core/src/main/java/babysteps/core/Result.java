@@ -807,16 +807,32 @@ public sealed interface Result<T, E> permits Result.Ok, Result.Err {
    * @param value the success value, possibly {@code null}
    */
   record Ok<T, E>(@Nullable T value) implements Result<T, E> {
+    /**
+     * Returns {@code true} for {@code Ok}.
+     *
+     * @return {@code true}
+     */
     @Override
     public boolean isOk() {
       return true;
     }
 
+    /**
+     * Returns the success value.
+     *
+     * @return the success value, possibly {@code null}
+     */
     @Override
     public @Nullable T unwrap() {
       return value;
     }
 
+    /**
+     * Throws because this is {@code Ok}.
+     *
+     * @return never returns normally
+     * @throws IllegalStateException always
+     */
     @Override
     public @Nullable E unwrapErr() {
       throw new IllegalStateException("Result is Ok");
@@ -830,16 +846,32 @@ public sealed interface Result<T, E> permits Result.Ok, Result.Err {
    */
   record Err<T, E>(@Nullable E error) implements Result<T, E> {
 
+    /**
+     * Returns {@code false} for {@code Err}.
+     *
+     * @return {@code false}
+     */
     @Override
     public boolean isOk() {
       return false;
     }
 
+    /**
+     * Throws because this is {@code Err}.
+     *
+     * @return never returns normally
+     * @throws IllegalStateException always
+     */
     @Override
     public @Nullable T unwrap() {
       throw new IllegalStateException("Result is Err");
     }
 
+    /**
+     * Returns the error value.
+     *
+     * @return the error value, possibly {@code null}
+     */
     @Override
     public @Nullable E unwrapErr() {
       return error;

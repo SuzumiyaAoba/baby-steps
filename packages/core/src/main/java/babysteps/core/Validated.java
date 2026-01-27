@@ -378,8 +378,7 @@ public sealed interface Validated<T, E> permits Validated.Ok, Validated.Err {
    * @return this validation
    * @throws NullPointerException if {@code action} is {@code null}
    */
-  default Validated<T, E> peekErrs(
-      @NonNull Consumer<? super @NonNull List<@Nullable E>> action) {
+  default Validated<T, E> peekErrs(@NonNull Consumer<? super @NonNull List<@Nullable E>> action) {
     Objects.requireNonNull(action, "action");
     if (isErr()) {
       action.accept(unwrapErrs());
@@ -544,16 +543,32 @@ public sealed interface Validated<T, E> permits Validated.Ok, Validated.Err {
   record Partition<T, E>(@NonNull List<T> oks, @NonNull List<@Nullable E> errs) {}
 
   record Ok<T, E>(@Nullable T value) implements Validated<T, E> {
+    /**
+     * Returns {@code true} for {@code Ok}.
+     *
+     * @return {@code true}
+     */
     @Override
     public boolean isOk() {
       return true;
     }
 
+    /**
+     * Returns the success value.
+     *
+     * @return the success value, possibly {@code null}
+     */
     @Override
     public @Nullable T unwrap() {
       return value;
     }
 
+    /**
+     * Throws because this is {@code Ok}.
+     *
+     * @return never returns normally
+     * @throws IllegalStateException always
+     */
     @Override
     public @NonNull List<@Nullable E> unwrapErrs() {
       throw new IllegalStateException("Validated is Ok");
@@ -575,16 +590,32 @@ public sealed interface Validated<T, E> permits Validated.Ok, Validated.Err {
       this(new ArrayList<>(Objects.requireNonNull(errors, "errors")));
     }
 
+    /**
+     * Returns {@code false} for {@code Err}.
+     *
+     * @return {@code false}
+     */
     @Override
     public boolean isOk() {
       return false;
     }
 
+    /**
+     * Throws because this is {@code Err}.
+     *
+     * @return never returns normally
+     * @throws IllegalStateException always
+     */
     @Override
     public @Nullable T unwrap() {
       throw new IllegalStateException("Validated is Err");
     }
 
+    /**
+     * Returns the accumulated errors.
+     *
+     * @return unmodifiable list of errors
+     */
     @Override
     public @NonNull List<@Nullable E> unwrapErrs() {
       return errors;
