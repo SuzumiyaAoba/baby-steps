@@ -6,7 +6,9 @@ import java.util.Collections;
 import java.util.List;
 import java.util.Objects;
 import java.util.function.BiFunction;
+import java.util.function.Consumer;
 import java.util.function.Function;
+import java.util.function.Supplier;
 import org.jspecify.annotations.NonNull;
 import org.jspecify.annotations.Nullable;
 
@@ -56,6 +58,42 @@ public sealed interface Validated<T, E> permits Validated.Ok, Validated.Err {
   static <T, E> @NonNull Validated<T, E> errs(@NonNull Collection<? extends @Nullable E> errors) {
     Objects.requireNonNull(errors, "errors");
     return new Err<>(errors);
+  }
+
+  /**
+   * Converts a {@link Result} into {@code Validated} by treating {@code Ok} as success.
+   *
+   * @param result result to convert
+   * @param <T> success value type
+   * @param <E> error value type
+   * @return {@code Ok} for {@code Result.ok}, otherwise {@code Err} with a single error
+   * @throws NullPointerException if {@code result} is {@code null}
+   */
+  static <T, E> @NonNull Validated<T, E> fromResult(
+      @NonNull Result<? extends T, ? extends E> result) {
+    Objects.requireNonNull(result, "result");
+    if (result.isOk()) {
+      return ok(result.unwrap());
+    }
+    return err(result.unwrapErr());
+  }
+
+  /**
+   * Converts an {@link Either} into {@code Validated} by treating {@code Right} as success.
+   *
+   * @param either either to convert
+   * @param <T> success value type
+   * @param <E> error value type
+   * @return {@code Ok} for {@code Right}, otherwise {@code Err} with a single error
+   * @throws NullPointerException if {@code either} is {@code null}
+   */
+  static <T, E> @NonNull Validated<T, E> fromEither(
+      @NonNull Either<? extends E, ? extends T> either) {
+    Objects.requireNonNull(either, "either");
+    if (either.isRight()) {
+      return ok(either.unwrapRight());
+    }
+    return err(either.unwrapLeft());
   }
 
   /**
@@ -161,6 +199,18 @@ public sealed interface Validated<T, E> permits Validated.Ok, Validated.Err {
   }
 
   /**
+   * Converts this {@code Validated} to {@link Either} by treating {@code Ok} as {@code Right}.
+   *
+   * @return {@code Either.right} for {@code Ok}, otherwise {@code Either.left} of error list
+   */
+  default Either<List<@Nullable E>, T> toEither() {
+    if (isOk()) {
+      return Either.right(unwrap());
+    }
+    return Either.left(unwrapErrs());
+  }
+
+  /**
    * Converts this {@code Validated} to {@link Option}.
    *
    * @return {@link Option#some} for {@code Ok}, otherwise {@link Option#none}
@@ -170,6 +220,73 @@ public sealed interface Validated<T, E> permits Validated.Ok, Validated.Err {
       return Option.ofNullable(unwrap());
     }
     return Option.none();
+  }
+
+  /**
+   * Returns this {@code Ok}, or {@code fallback} when this is {@code Err}.
+   *
+   * @param fallback the fallback validation
+   * @return this validation for {@code Ok}, otherwise {@code fallback}
+   * @throws NullPointerException if {@code fallback} is {@code null}
+   */
+  default Validated<T, E> orElse(@NonNull Validated<? extends T, E> fallback) {
+    Objects.requireNonNull(fallback, "fallback");
+    if (isOk()) {
+      return this;
+    }
+    @SuppressWarnings("unchecked")
+    final var other = (Validated<T, E>) fallback;
+    return other;
+  }
+
+  /**
+   * Returns this {@code Ok}, or a supplied {@code Validated} when this is {@code Err}.
+   *
+   * @param fallback the supplier for the fallback validation
+   * @return this validation for {@code Ok}, otherwise the supplied validation
+   * @throws NullPointerException if {@code fallback} or its result is {@code null}
+   */
+  default Validated<T, E> orElseGet(
+      @NonNull Supplier<? extends Validated<? extends T, E>> fallback) {
+    Objects.requireNonNull(fallback, "fallback");
+    if (isOk()) {
+      return this;
+    }
+    @SuppressWarnings("unchecked")
+    final var other = (Validated<T, E>) Objects.requireNonNull(fallback.get(), "validation");
+    return other;
+  }
+
+  /**
+   * Applies a validated function to this validated value, accumulating errors.
+   *
+   * @param function validated function
+   * @param <U> mapped success type
+   * @return applied validation with accumulated errors
+   * @throws NullPointerException if {@code function} is {@code null}
+   */
+  default <U> @NonNull Validated<U, E> ap(
+      @NonNull Validated<? extends Function<? super @Nullable T, ? extends U>, E> function) {
+    Objects.requireNonNull(function, "function");
+    return function.zip(this, (mapper, value) -> mapper.apply(value));
+  }
+
+  /**
+   * Adds context to {@code Err} by prepending the supplied error.
+   *
+   * @param context supplier for the context error
+   * @return validation with prepended context error when {@code Err}
+   * @throws NullPointerException if {@code context} is {@code null}
+   */
+  default Validated<T, E> withContext(@NonNull Supplier<? extends @Nullable E> context) {
+    Objects.requireNonNull(context, "context");
+    if (isOk()) {
+      return this;
+    }
+    final var errors = new ArrayList<@Nullable E>(unwrapErrs().size() + 1);
+    errors.add(context.get());
+    errors.addAll(unwrapErrs());
+    return errList(errors);
   }
 
   /**
@@ -237,6 +354,37 @@ public sealed interface Validated<T, E> permits Validated.Ok, Validated.Err {
     }
     final var mapped = Objects.requireNonNull(mapper.apply(unwrapErrs()), "errors");
     return new Err<>(mapped);
+  }
+
+  /**
+   * Performs a side effect for {@code Ok} without changing the result.
+   *
+   * @param action consumer for the success value
+   * @return this validation
+   * @throws NullPointerException if {@code action} is {@code null}
+   */
+  default Validated<T, E> peek(@NonNull Consumer<? super @Nullable T> action) {
+    Objects.requireNonNull(action, "action");
+    if (isOk()) {
+      action.accept(unwrap());
+    }
+    return this;
+  }
+
+  /**
+   * Performs a side effect for {@code Err} without changing the result.
+   *
+   * @param action consumer for the error list
+   * @return this validation
+   * @throws NullPointerException if {@code action} is {@code null}
+   */
+  default Validated<T, E> peekErrs(
+      @NonNull Consumer<? super @NonNull List<@Nullable E>> action) {
+    Objects.requireNonNull(action, "action");
+    if (isErr()) {
+      action.accept(unwrapErrs());
+    }
+    return this;
   }
 
   /**
@@ -377,7 +525,7 @@ public sealed interface Validated<T, E> permits Validated.Ok, Validated.Err {
     final var merged = new ArrayList<@Nullable E>(first.size() + second.size());
     merged.addAll(first);
     merged.addAll(second);
-    return Collections.unmodifiableList(merged);
+    return merged;
   }
 
   /**

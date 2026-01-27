@@ -1,6 +1,9 @@
 package babysteps.core;
 
 import java.util.List;
+import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.concurrent.atomic.AtomicReference;
+import java.util.function.Function;
 import org.assertj.core.api.SoftAssertions;
 import org.assertj.core.api.ThrowableAssert.ThrowingCallable;
 import org.assertj.core.api.junit.jupiter.InjectSoftAssertions;
@@ -115,6 +118,58 @@ class ValidatedTest {
   }
 
   @Test
+  void fromResult_withOk_expectedOk() {
+    // Arrange
+    final var result = Result.ok("value");
+
+    // Act
+    final var sut = Validated.fromResult(result);
+
+    // Assert
+    softly.assertThat(sut.isOk()).isTrue();
+    softly.assertThat(sut.unwrap()).isEqualTo("value");
+  }
+
+  @Test
+  void fromResult_withErr_expectedErr() {
+    // Arrange
+    final var result = Result.<String, String>err("error");
+
+    // Act
+    final var sut = Validated.fromResult(result);
+
+    // Assert
+    softly.assertThat(sut.isErr()).isTrue();
+    softly.assertThat(sut.unwrapErrs()).containsExactly("error");
+  }
+
+  @Test
+  void fromEither_withRight_expectedOk() {
+    // Arrange
+    final var either = Either.<String, String>right("value");
+
+    // Act
+    final var sut = Validated.fromEither(either);
+
+    // Assert
+    softly.assertThat(sut.isOk()).isTrue();
+    softly.assertThat(sut.unwrap()).isEqualTo("value");
+  }
+
+  @Test
+  void fromEither_withLeft_expectedErr() {
+    // Arrange
+    final var either = Either.<String, String>left("error");
+
+    // Act
+    final var sut = Validated.fromEither(either);
+
+    // Assert
+    softly.assertThat(sut.isErr()).isTrue();
+    softly.assertThat(sut.unwrapErrs()).containsExactly("error");
+  }
+
+  @Test
   void map_withOk_expectedMappedOk() {
     // Arrange
     final var sut = Validated.ok("value");
@@ -217,6 +272,32 @@ class ValidatedTest {
   }
 
   @Test
+  void toEither_withOk_expectedRight() {
+    // Arrange
+    final var sut = Validated.ok("value");
+
+    // Act
+    final var result = sut.toEither();
+
+    // Assert
+    softly.assertThat(result.isRight()).isTrue();
+    softly.assertThat(result.unwrapRight()).isEqualTo("value");
+  }
+
+  @Test
+  void toEither_withErr_expectedLeft() {
+    // Arrange
+    final var sut = Validated.<String, String>errs(List.of("error1", "error2"));
+
+    // Act
+    final var result = sut.toEither();
+
+    // Assert
+    softly.assertThat(result.isLeft()).isTrue();
+    softly.assertThat(result.unwrapLeft()).containsExactly("error1", "error2");
+  }
+
+  @Test
   void toOption_withOk_expectedSome() {
     // Arrange
     final var sut = Validated.ok("value");
@@ -239,6 +320,68 @@ class ValidatedTest {
 
     // Assert
     softly.assertThat(result.isEmpty()).isTrue();
+  }
+
+  @Test
+  void orElse_withOk_expectedSame() {
+    // Arrange
+    final var sut = Validated.ok("value");
+    final var fallback = Validated.ok("fallback");
+
+    // Act
+    final var result = sut.orElse(fallback);
+
+    // Assert
+    softly.assertThat(result).isSameAs(sut);
+  }
+
+  @Test
+  void orElse_withErr_expectedFallback() {
+    // Arrange
+    final var sut = Validated.<String, String>err("error");
+    final var fallback = Validated.ok("fallback");
+
+    // Act
+    final var result = sut.orElse(fallback);
+
+    // Assert
+    softly.assertThat(result).isSameAs(fallback);
+  }
+
+  @Test
+  void orElseGet_withOk_expectedSame() {
+    // Arrange
+    final var called = new AtomicBoolean(false);
+    final var sut = Validated.ok("value");
+    final var fallback = Validated.ok("fallback");
+
+    // Act
+    final var result = sut.orElseGet(() -> {
+      called.set(true);
+      return fallback;
+    });
+
+    // Assert
+    softly.assertThat(called).isFalse();
+    softly.assertThat(result).isSameAs(sut);
+  }
+
+  @Test
+  void orElseGet_withErr_expectedFallback() {
+    // Arrange
+    final var called = new AtomicBoolean(false);
+    final var sut = Validated.<String, String>err("error");
+    final var fallback = Validated.ok("fallback");
+
+    // Act
+    final var result = sut.orElseGet(() -> {
+      called.set(true);
+      return fallback;
+    });
+
+    // Assert
+    softly.assertThat(called).isTrue();
+    softly.assertThat(result).isSameAs(fallback);
   }
 
   @Test
@@ -312,6 +455,89 @@ class ValidatedTest {
   }
 
   @Test
+  void ap_withOkFunctionAndOkValue_expectedOk() {
+    // Arrange
+    final var value = Validated.<String, String>ok("value");
+    final var function =
+        Validated.<Function<String, String>, String>ok(input -> input + "!");
+
+    // Act
+    final var result = value.ap(function);
+
+    // Assert
+    softly.assertThat(result.isOk()).isTrue();
+    softly.assertThat(result.unwrap()).isEqualTo("value!");
+  }
+
+  @Test
+  void ap_withErrFunctionAndOkValue_expectedErr() {
+    // Arrange
+    final var value = Validated.<String, String>ok("value");
+    final var function = Validated.<Function<String, String>, String>err("error1");
+
+    // Act
+    final var result = value.ap(function);
+
+    // Assert
+    softly.assertThat(result.isErr()).isTrue();
+    softly.assertThat(result.unwrapErrs()).containsExactly("error1");
+  }
+
+  @Test
+  void ap_withOkFunctionAndErrValue_expectedErr() {
+    // Arrange
+    final var value = Validated.<String, String>err("error2");
+    final var function =
+        Validated.<Function<String, String>, String>ok(input -> input + "!");
+
+    // Act
+    final var result = value.ap(function);
+
+    // Assert
+    softly.assertThat(result.isErr()).isTrue();
+    softly.assertThat(result.unwrapErrs()).containsExactly("error2");
+  }
+
+  @Test
+  void ap_withErrFunctionAndErrValue_expectedAccumulatedErrors() {
+    // Arrange
+    final var value = Validated.<String, String>err("error2");
+    final var function = Validated.<Function<String, String>, String>err("error1");
+
+    // Act
+    final var result = value.ap(function);
+
+    // Assert
+    softly.assertThat(result.isErr()).isTrue();
+    softly.assertThat(result.unwrapErrs()).containsExactly("error1", "error2");
+  }
+
+  @Test
+  void withContext_withErr_expectedPrependedContext() {
+    // Arrange
+    final var sut = Validated.<String, String>errs(List.of("error1", "error2"));
+
+    // Act
+    final var result = sut.withContext(() -> "context");
+
+    // Assert
+    softly.assertThat(result.isErr()).isTrue();
+    softly.assertThat(result.unwrapErrs()).containsExactly("context", "error1", "error2");
+  }
+
+  @Test
+  void withContext_withOk_expectedSame() {
+    // Arrange
+    final var sut = Validated.ok("value");
+
+    // Act
+    final var result = sut.withContext(() -> "context");
+
+    // Assert
+    softly.assertThat(result).isSameAs(sut);
+  }
+
+  @Test
   void mapErrs_withErr_expectedMappedErrors() {
     // Arrange
     final var sut = Validated.<String, String>errs(List.of("error1", "error2"));
@@ -335,6 +561,60 @@ class ValidatedTest {
     // Assert
     softly.assertThat(result.isOk()).isTrue();
     softly.assertThat(result.unwrap()).isEqualTo("value");
+  }
+
+  @Test
+  void peek_withOk_expectedActionCalled() {
+    // Arrange
+    final var captured = new AtomicReference<String>();
+    final var sut = Validated.ok("value");
+
+    // Act
+    final var result = sut.peek(captured::set);
+
+    // Assert
+    softly.assertThat(captured.get()).isEqualTo("value");
+    softly.assertThat(result).isSameAs(sut);
+  }
+
+  @Test
+  void peek_withErr_expectedActionNotCalled() {
+    // Arrange
+    final var called = new AtomicBoolean(false);
+    final var sut = Validated.<String, String>err("error");
+
+    // Act
+    sut.peek(value -> called.set(true));
+
+    // Assert
+    softly.assertThat(called).isFalse();
+  }
+
+  @Test
+  void peekErrs_withErr_expectedActionCalled() {
+    // Arrange
+    final var captured = new AtomicReference<List<String>>();
+    final var sut = Validated.<String, String>errs(List.of("error1", "error2"));
+
+    // Act
+    final var result = sut.peekErrs(captured::set);
+
+    // Assert
+    softly.assertThat(captured.get()).containsExactly("error1", "error2");
+    softly.assertThat(result).isSameAs(sut);
+  }
+
+  @Test
+  void peekErrs_withOk_expectedActionNotCalled() {
+    // Arrange
+    final var called = new AtomicBoolean(false);
+    final var sut = Validated.ok("value");
+
+    // Act
+    sut.peekErrs(errors -> called.set(true));
+
+    // Assert
+    softly.assertThat(called).isFalse();
   }
 
   @Test
