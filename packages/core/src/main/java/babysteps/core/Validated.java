@@ -5,6 +5,7 @@ import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
 import java.util.Objects;
+import java.util.Optional;
 import java.util.function.BiFunction;
 import java.util.function.Consumer;
 import java.util.function.Function;
@@ -97,6 +98,47 @@ public sealed interface Validated<T, E> permits Validated.Ok, Validated.Err {
   }
 
   /**
+   * Converts an {@link Option} into {@code Validated} by treating {@code Some} as success.
+   *
+   * @param option option to convert
+   * @param ifEmpty supplier for the error when the option is empty
+   * @param <T> success value type
+   * @param <E> error value type
+   * @return {@code Ok} for {@code Some}, otherwise {@code Err} with a single error
+   * @throws NullPointerException if {@code option}, {@code ifEmpty}, or its result is {@code null}
+   */
+  static <T, E> @NonNull Validated<T, E> fromOption(
+      @NonNull Option<? extends T> option, @NonNull Supplier<? extends E> ifEmpty) {
+    Objects.requireNonNull(option, "option");
+    Objects.requireNonNull(ifEmpty, "ifEmpty");
+    if (option.isPresent()) {
+      return ok(option.get());
+    }
+    return err(Objects.requireNonNull(ifEmpty.get(), "error"));
+  }
+
+  /**
+   * Converts an {@link Optional} into {@code Validated} by treating presence as success.
+   *
+   * @param optional optional to convert
+   * @param ifEmpty supplier for the error when the optional is empty
+   * @param <T> success value type
+   * @param <E> error value type
+   * @return {@code Ok} for present optional, otherwise {@code Err} with a single error
+   * @throws NullPointerException if {@code optional}, {@code ifEmpty}, or its result is
+   *     {@code null}
+   */
+  static <T, E> @NonNull Validated<T, E> fromOptional(
+      @NonNull Optional<? extends T> optional, @NonNull Supplier<? extends E> ifEmpty) {
+    Objects.requireNonNull(optional, "optional");
+    Objects.requireNonNull(ifEmpty, "ifEmpty");
+    if (optional.isPresent()) {
+      return ok(optional.get());
+    }
+    return err(Objects.requireNonNull(ifEmpty.get(), "error"));
+  }
+
+  /**
    * @return {@code true} if this is {@code Ok}
    */
   boolean isOk();
@@ -123,6 +165,78 @@ public sealed interface Validated<T, E> permits Validated.Ok, Validated.Err {
    * @throws IllegalStateException if this is {@code Ok}
    */
   @NonNull List<@Nullable E> unwrapErrs();
+
+  /**
+   * Returns the success value or the provided fallback when this is {@code Err}.
+   *
+   * @param fallback fallback value, possibly {@code null}
+   * @return the success value or {@code fallback}
+   */
+  default @Nullable T unwrapOr(@Nullable T fallback) {
+    return isOk() ? unwrap() : fallback;
+  }
+
+  /**
+   * Returns the success value or the result of {@code fallback} when this is {@code Err}.
+   *
+   * @param fallback supplier used for {@code Err}
+   * @return the success value or the supplier result
+   * @throws NullPointerException if {@code fallback} is {@code null}
+   */
+  default @Nullable T unwrapOrElse(@NonNull Supplier<? extends @Nullable T> fallback) {
+    Objects.requireNonNull(fallback, "fallback");
+    return isOk() ? unwrap() : fallback.get();
+  }
+
+  /**
+   * Returns the success value or throws an exception mapped from the error list.
+   *
+   * @param mapper mapper used to convert the error list into an exception
+   * @param <X> exception type
+   * @return the success value, possibly {@code null}
+   * @throws X if this validation is {@code Err}
+   * @throws NullPointerException if {@code mapper} or its result is {@code null}
+   */
+  default <X extends Throwable> @Nullable T unwrapOrThrow(
+      @NonNull Function<? super @NonNull List<@Nullable E>, ? extends X> mapper) throws X {
+    Objects.requireNonNull(mapper, "mapper");
+    if (isErr()) {
+      throw Objects.requireNonNull(mapper.apply(unwrapErrs()), "exception");
+    }
+    return unwrap();
+  }
+
+  /**
+   * Returns the success value or throws {@link IllegalStateException} with the given message.
+   *
+   * @param message exception message
+   * @return the success value, possibly {@code null}
+   * @throws IllegalStateException if this is {@code Err}
+   * @throws NullPointerException if {@code message} is {@code null}
+   */
+  default @Nullable T expect(@NonNull String message) {
+    Objects.requireNonNull(message, "message");
+    if (isErr()) {
+      throw new IllegalStateException(message);
+    }
+    return unwrap();
+  }
+
+  /**
+   * Returns the accumulated errors or throws {@link IllegalStateException} with the given message.
+   *
+   * @param message exception message
+   * @return unmodifiable list of errors
+   * @throws IllegalStateException if this is {@code Ok}
+   * @throws NullPointerException if {@code message} is {@code null}
+   */
+  default @NonNull List<@Nullable E> expectErrs(@NonNull String message) {
+    Objects.requireNonNull(message, "message");
+    if (isOk()) {
+      throw new IllegalStateException(message);
+    }
+    return unwrapErrs();
+  }
 
   /**
    * Maps the success value while preserving errors.
@@ -220,6 +334,30 @@ public sealed interface Validated<T, E> permits Validated.Ok, Validated.Err {
       return Option.ofNullable(unwrap());
     }
     return Option.none();
+  }
+
+  /**
+   * Returns the success value as {@link Optional}.
+   *
+   * @return {@link Optional#empty()} for {@code Err}, otherwise the success value
+   */
+  default Optional<T> ok() {
+    if (isOk()) {
+      return Optional.ofNullable(unwrap());
+    }
+    return Optional.empty();
+  }
+
+  /**
+   * Returns the errors as {@link Optional}.
+   *
+   * @return {@link Optional#empty()} for {@code Ok}, otherwise the error list
+   */
+  default Optional<List<@Nullable E>> errs() {
+    if (isErr()) {
+      return Optional.of(unwrapErrs());
+    }
+    return Optional.empty();
   }
 
   /**
@@ -384,6 +522,47 @@ public sealed interface Validated<T, E> permits Validated.Ok, Validated.Err {
       action.accept(unwrapErrs());
     }
     return this;
+  }
+
+  /**
+   * Performs a side effect on the current case without changing the result.
+   *
+   * @param onErrs consumer for the error list
+   * @param onOk consumer for the success value
+   * @return this validation
+   * @throws NullPointerException if {@code onErrs} or {@code onOk} is {@code null}
+   */
+  default Validated<T, E> peekBoth(
+      @NonNull Consumer<? super @NonNull List<@Nullable E>> onErrs,
+      @NonNull Consumer<? super @Nullable T> onOk) {
+    Objects.requireNonNull(onErrs, "onErrs");
+    Objects.requireNonNull(onOk, "onOk");
+    if (isOk()) {
+      onOk.accept(unwrap());
+    } else {
+      onErrs.accept(unwrapErrs());
+    }
+    return this;
+  }
+
+  /**
+   * Returns {@code true} if this is {@code Ok} and the value equals {@code other}.
+   *
+   * @param other value to compare with the success value
+   * @return {@code true} when {@code Ok} and values are equal
+   */
+  default boolean contains(@Nullable T other) {
+    return isOk() && Objects.equals(unwrap(), other);
+  }
+
+  /**
+   * Returns {@code true} if this is {@code Err} and the error list contains {@code other}.
+   *
+   * @param other value to compare with error elements
+   * @return {@code true} when {@code Err} and errors contain the value
+   */
+  default boolean containsErr(@Nullable E other) {
+    return isErr() && unwrapErrs().contains(other);
   }
 
   /**

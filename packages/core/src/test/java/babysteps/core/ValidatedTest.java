@@ -1,6 +1,7 @@
 package babysteps.core;
 
 import java.util.List;
+import java.util.Optional;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.Function;
@@ -118,6 +119,144 @@ class ValidatedTest {
   }
 
   @Test
+  void unwrapOr_withOk_expectedValue() {
+    // Arrange
+    final var sut = Validated.ok("value");
+
+    // Act
+    final var result = sut.unwrapOr("fallback");
+
+    // Assert
+    softly.assertThat(result).isEqualTo("value");
+  }
+
+  @Test
+  void unwrapOr_withErr_expectedFallback() {
+    // Arrange
+    final var sut = Validated.<String, String>err("error");
+
+    // Act
+    final var result = sut.unwrapOr("fallback");
+
+    // Assert
+    softly.assertThat(result).isEqualTo("fallback");
+  }
+
+  @Test
+  void unwrapOrElse_withOk_expectedValue() {
+    // Arrange
+    final var sut = Validated.ok("value");
+    final var called = new AtomicBoolean(false);
+
+    // Act
+    final var result =
+        sut.unwrapOrElse(
+            () -> {
+              called.set(true);
+              return "fallback";
+            });
+
+    // Assert
+    softly.assertThat(result).isEqualTo("value");
+    softly.assertThat(called.get()).isFalse();
+  }
+
+  @Test
+  void unwrapOrElse_withErr_expectedFallback() {
+    // Arrange
+    final var sut = Validated.<String, String>err("error");
+
+    // Act
+    final var result = sut.unwrapOrElse(() -> "fallback");
+
+    // Assert
+    softly.assertThat(result).isEqualTo("fallback");
+  }
+
+  @Test
+  void unwrapOrThrow_withOk_expectedValue() {
+    // Arrange
+    final var sut = Validated.ok("value");
+
+    // Act
+    final var result = sut.unwrapOrThrow(errors -> new IllegalStateException("unexpected"));
+
+    // Assert
+    softly.assertThat(result).isEqualTo("value");
+  }
+
+  @Test
+  void unwrapOrThrow_withErr_expectedException() {
+    // Arrange
+    final var sut = Validated.<String, String>err("error");
+
+    // Act
+    final var action =
+        (ThrowingCallable)
+            () -> sut.unwrapOrThrow(errors -> new IllegalArgumentException(String.join(",", errors)));
+
+    // Assert
+    softly
+        .assertThatThrownBy(action)
+        .isInstanceOf(IllegalArgumentException.class)
+        .hasMessage("error");
+  }
+
+  @Test
+  void expect_withOk_expectedValue() {
+    // Arrange
+    final var sut = Validated.ok("value");
+
+    // Act
+    final var result = sut.expect("boom");
+
+    // Assert
+    softly.assertThat(result).isEqualTo("value");
+  }
+
+  @Test
+  void expect_withErr_expectedException() {
+    // Arrange
+    final var sut = Validated.<String, String>err("error");
+
+    // Act
+    final var action = (ThrowingCallable) () -> sut.expect("boom");
+
+    // Assert
+    softly
+        .assertThatThrownBy(action)
+        .isInstanceOf(IllegalStateException.class)
+        .hasMessage("boom");
+  }
+
+  @Test
+  void expectErrs_withErr_expectedErrors() {
+    // Arrange
+    final var sut = Validated.<String, String>errs(List.of("error1", "error2"));
+
+    // Act
+    final var result = sut.expectErrs("boom");
+
+    // Assert
+    softly.assertThat(result).containsExactly("error1", "error2");
+  }
+
+  @Test
+  void expectErrs_withOk_expectedException() {
+    // Arrange
+    final var sut = Validated.ok("value");
+
+    // Act
+    final var action = (ThrowingCallable) () -> sut.expectErrs("boom");
+
+    // Assert
+    softly
+        .assertThatThrownBy(action)
+        .isInstanceOf(IllegalStateException.class)
+        .hasMessage("boom");
+  }
+
+  @Test
   void fromResult_withOk_expectedOk() {
     // Arrange
     final var result = Result.ok("value");
@@ -163,6 +302,58 @@ class ValidatedTest {
 
     // Act
     final var sut = Validated.fromEither(either);
+
+    // Assert
+    softly.assertThat(sut.isErr()).isTrue();
+    softly.assertThat(sut.unwrapErrs()).containsExactly("error");
+  }
+
+  @Test
+  void fromOption_withSome_expectedOk() {
+    // Arrange
+    final var option = Option.some("value");
+
+    // Act
+    final var sut = Validated.fromOption(option, () -> "error");
+
+    // Assert
+    softly.assertThat(sut.isOk()).isTrue();
+    softly.assertThat(sut.unwrap()).isEqualTo("value");
+  }
+
+  @Test
+  void fromOption_withNone_expectedErr() {
+    // Arrange
+    final var option = Option.none();
+
+    // Act
+    final var sut = Validated.fromOption(option, () -> "error");
+
+    // Assert
+    softly.assertThat(sut.isErr()).isTrue();
+    softly.assertThat(sut.unwrapErrs()).containsExactly("error");
+  }
+
+  @Test
+  void fromOptional_withPresent_expectedOk() {
+    // Arrange
+    final var optional = Optional.of("value");
+
+    // Act
+    final var sut = Validated.fromOptional(optional, () -> "error");
+
+    // Assert
+    softly.assertThat(sut.isOk()).isTrue();
+    softly.assertThat(sut.unwrap()).isEqualTo("value");
+  }
+
+  @Test
+  void fromOptional_withEmpty_expectedErr() {
+    // Arrange
+    final var optional = Optional.<String>empty();
+
+    // Act
+    final var sut = Validated.fromOptional(optional, () -> "error");
 
     // Assert
     softly.assertThat(sut.isErr()).isTrue();
@@ -320,6 +511,54 @@ class ValidatedTest {
 
     // Assert
     softly.assertThat(result.isEmpty()).isTrue();
+  }
+
+  @Test
+  void ok_withOk_expectedOptional() {
+    // Arrange
+    final var sut = Validated.ok("value");
+
+    // Act
+    final var result = sut.ok();
+
+    // Assert
+    softly.assertThat(result).contains("value");
+  }
+
+  @Test
+  void ok_withErr_expectedEmpty() {
+    // Arrange
+    final var sut = Validated.<String, String>err("error");
+
+    // Act
+    final var result = sut.ok();
+
+    // Assert
+    softly.assertThat(result).isEmpty();
+  }
+
+  @Test
+  void errs_withErr_expectedOptional() {
+    // Arrange
+    final var sut = Validated.<String, String>errs(List.of("error1", "error2"));
+
+    // Act
+    final var result = sut.errs();
+
+    // Assert
+    softly.assertThat(result).contains(List.of("error1", "error2"));
+  }
+
+  @Test
+  void errs_withOk_expectedEmpty() {
+    // Arrange
+    final var sut = Validated.ok("value");
+
+    // Act
+    final var result = sut.errs();
+
+    // Assert
+    softly.assertThat(result).isEmpty();
   }
 
   @Test
@@ -617,6 +856,72 @@ class ValidatedTest {
 
     // Assert
     softly.assertThat(called).isFalse();
+  }
+
+  @Test
+  void peekBoth_withOk_expectedOkActionOnly() {
+    // Arrange
+    final var sut = Validated.ok("value");
+    final var errCalled = new AtomicBoolean(false);
+    final var okValue = new AtomicReference<String>();
+
+    // Act
+    sut.peekBoth(
+        errors -> errCalled.set(true),
+        value -> {
+          okValue.set(value);
+        });
+
+    // Assert
+    softly.assertThat(errCalled.get()).isFalse();
+    softly.assertThat(okValue.get()).isEqualTo("value");
+  }
+
+  @Test
+  void peekBoth_withErr_expectedErrActionOnly() {
+    // Arrange
+    final var sut = Validated.<String, String>errs(List.of("error1", "error2"));
+    final var okCalled = new AtomicBoolean(false);
+    final var errors = new AtomicReference<List<String>>();
+
+    // Act
+    sut.peekBoth(
+        errs -> {
+          errors.set(errs);
+        },
+        value -> okCalled.set(true));
+
+    // Assert
+    softly.assertThat(okCalled.get()).isFalse();
+    softly.assertThat(errors.get()).containsExactly("error1", "error2");
+  }
+
+  @Test
+  void contains_withOk_expectedComparison() {
+    // Arrange
+    final var sut = Validated.ok("value");
+
+    // Act
+    final var same = sut.contains("value");
+    final var different = sut.contains("other");
+
+    // Assert
+    softly.assertThat(same).isTrue();
+    softly.assertThat(different).isFalse();
+  }
+
+  @Test
+  void containsErr_withErr_expectedComparison() {
+    // Arrange
+    final var sut = Validated.<String, String>errs(List.of("error1", "error2"));
+
+    // Act
+    final var same = sut.containsErr("error2");
+    final var different = sut.containsErr("error3");
+
+    // Assert
+    softly.assertThat(same).isTrue();
+    softly.assertThat(different).isFalse();
   }
 
   @Test
