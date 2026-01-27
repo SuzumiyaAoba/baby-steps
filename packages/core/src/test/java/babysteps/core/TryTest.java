@@ -205,6 +205,40 @@ class TryTest {
   }
 
   @Test
+  void orElseThrow_withSuccess_expectedValueAndSupplierNotCalled() {
+    // Arrange
+    final var called = new AtomicBoolean(false);
+    final var sut = Try.success("value");
+
+    // Act
+    final var result =
+        sut.orElseThrow(
+            () -> {
+              called.set(true);
+              return new IllegalStateException("boom");
+            });
+
+    // Assert
+    softly.assertThat(result).isEqualTo("value");
+    softly.assertThat(called).isFalse();
+  }
+
+  @Test
+  void orElseThrow_withFailure_expectedException() {
+    // Arrange
+    final var sut = Try.failure(new IllegalStateException("boom"));
+
+    // Act
+    final var action = (ThrowingCallable) () -> sut.orElseThrow(() -> new RuntimeException("nope"));
+
+    // Assert
+    softly
+        .assertThatThrownBy(action)
+        .isInstanceOf(RuntimeException.class)
+        .hasMessage("nope");
+  }
+
+  @Test
   void map_withSuccess_expectedMappedValue() {
     // Arrange
     final var sut = Try.success("value");
@@ -254,6 +288,96 @@ class TryTest {
         .assertThat(result.getCause())
         .isInstanceOf(IllegalArgumentException.class)
         .hasMessage("mapped");
+  }
+
+  @Test
+  void fold_withSuccess_expectedSuccessHandler() {
+    // Arrange
+    final var sut = Try.success("value");
+
+    // Act
+    final var result = sut.fold(Throwable::getMessage, value -> value + "!");
+
+    // Assert
+    softly.assertThat(result).isEqualTo("value!");
+  }
+
+  @Test
+  void fold_withFailure_expectedFailureHandler() {
+    // Arrange
+    final var sut = Try.failure(new IllegalStateException("boom"));
+
+    // Act
+    final var result = sut.fold(Throwable::getMessage, value -> "unused");
+
+    // Assert
+    softly.assertThat(result).isEqualTo("boom");
+  }
+
+  @Test
+  void peek_withSuccess_expectedActionCalledAndSameInstance() {
+    // Arrange
+    final var called = new AtomicBoolean(false);
+    final var sut = Try.success("value");
+
+    // Act
+    final var result =
+        sut.peek(
+            value -> {
+              called.set(true);
+              softly.assertThat(value).isEqualTo("value");
+            });
+
+    // Assert
+    softly.assertThat(result).isSameAs(sut);
+    softly.assertThat(called).isTrue();
+  }
+
+  @Test
+  void peek_withFailure_expectedActionNotCalled() {
+    // Arrange
+    final var called = new AtomicBoolean(false);
+    final var sut = Try.failure(new IllegalStateException("boom"));
+
+    // Act
+    final var result = sut.peek(value -> called.set(true));
+
+    // Assert
+    softly.assertThat(result).isSameAs(sut);
+    softly.assertThat(called).isFalse();
+  }
+
+  @Test
+  void peekFailure_withFailure_expectedActionCalledAndSameInstance() {
+    // Arrange
+    final var called = new AtomicBoolean(false);
+    final var sut = Try.failure(new IllegalStateException("boom"));
+
+    // Act
+    final var result =
+        sut.peekFailure(
+            error -> {
+              called.set(true);
+              softly.assertThat(error).isInstanceOf(IllegalStateException.class);
+            });
+
+    // Assert
+    softly.assertThat(result).isSameAs(sut);
+    softly.assertThat(called).isTrue();
+  }
+
+  @Test
+  void peekFailure_withSuccess_expectedActionNotCalled() {
+    // Arrange
+    final var called = new AtomicBoolean(false);
+    final var sut = Try.success("value");
+
+    // Act
+    final var result = sut.peekFailure(error -> called.set(true));
+
+    // Assert
+    softly.assertThat(result).isSameAs(sut);
+    softly.assertThat(called).isFalse();
   }
 
   @Test

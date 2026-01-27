@@ -1,6 +1,7 @@
 package babysteps.core;
 
 import java.util.Objects;
+import java.util.function.Consumer;
 import java.util.function.Function;
 import java.util.function.Supplier;
 import org.jspecify.annotations.NonNull;
@@ -107,6 +108,25 @@ public sealed interface Try<T> permits Try.Success, Try.Failure {
   }
 
   /**
+   * Returns the success value or throws a supplied exception when this is {@code Failure}.
+   *
+   * @param exceptionSupplier supplier for exception
+   * @param <X> exception type
+   * @return the success value, possibly {@code null}
+   * @throws X if this try is {@code Failure}
+   * @throws NullPointerException if {@code exceptionSupplier} is {@code null}
+   */
+  default <X extends Throwable> @Nullable T orElseThrow(
+      @NonNull Supplier<? extends X> exceptionSupplier) throws X {
+    Objects.requireNonNull(exceptionSupplier, "exceptionSupplier");
+    if (isFailure()) {
+      final var exception = Objects.requireNonNull(exceptionSupplier.get(), "exception");
+      throw exception;
+    }
+    return get();
+  }
+
+  /**
    * Maps the success value, capturing mapper exceptions as {@code Failure}.
    *
    * @param mapper mapper for the success value
@@ -189,6 +209,53 @@ public sealed interface Try<T> permits Try.Success, Try.Failure {
     } catch (Exception exception) {
       return failure(exception);
     }
+  }
+
+  /**
+   * Fold this {@code Try} into a single value by handling success and failure cases.
+   *
+   * @param ifFailure handler for the failure case
+   * @param ifSuccess handler for the success case
+   * @param <U> result type
+   * @return result of the chosen handler
+   * @throws NullPointerException if {@code ifFailure} or {@code ifSuccess} is {@code null}
+   */
+  default <U> @Nullable U fold(
+      @NonNull Function<? super Throwable, ? extends U> ifFailure,
+      @NonNull Function<? super @Nullable T, ? extends U> ifSuccess) {
+    Objects.requireNonNull(ifFailure, "ifFailure");
+    Objects.requireNonNull(ifSuccess, "ifSuccess");
+    return isSuccess() ? ifSuccess.apply(get()) : ifFailure.apply(getCause());
+  }
+
+  /**
+   * Perform a side effect for {@code Success} without changing the result.
+   *
+   * @param action consumer for the success value
+   * @return this try
+   * @throws NullPointerException if {@code action} is {@code null}
+   */
+  default @NonNull Try<T> peek(@NonNull Consumer<? super @Nullable T> action) {
+    Objects.requireNonNull(action, "action");
+    if (isSuccess()) {
+      action.accept(get());
+    }
+    return this;
+  }
+
+  /**
+   * Perform a side effect for {@code Failure} without changing the result.
+   *
+   * @param action consumer for the failure cause
+   * @return this try
+   * @throws NullPointerException if {@code action} is {@code null}
+   */
+  default @NonNull Try<T> peekFailure(@NonNull Consumer<? super Throwable> action) {
+    Objects.requireNonNull(action, "action");
+    if (isFailure()) {
+      action.accept(getCause());
+    }
+    return this;
   }
 
   /**
