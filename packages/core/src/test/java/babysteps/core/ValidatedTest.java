@@ -154,6 +154,19 @@ class ValidatedTest {
   }
 
   @Test
+  void mapErr_withOk_expectedOk() {
+    // Arrange
+    final var sut = Validated.ok("value");
+
+    // Act
+    final var result = sut.mapErr(error -> error + "!");
+
+    // Assert
+    softly.assertThat(result.isOk()).isTrue();
+    softly.assertThat(result.unwrap()).isEqualTo("value");
+  }
+
+  @Test
   void fold_withOk_expectedOkResult() {
     // Arrange
     final var sut = Validated.ok("value");
