@@ -81,7 +81,7 @@ public sealed interface Validated<T, E> permits Validated.Ok, Validated.Err {
   /**
    * Returns the accumulated errors.
    *
-   * @return list of errors
+   * @return unmodifiable list of errors
    * @throws IllegalStateException if this is {@code Ok}
    */
   @NonNull List<@Nullable E> unwrapErrs();
@@ -110,7 +110,7 @@ public sealed interface Validated<T, E> permits Validated.Ok, Validated.Err {
    *
    * @param mapper mapper for error elements
    * @param <F> mapped error type
-   * @return mapped {@code Err}, or the same {@code Ok}
+   * @return mapped {@code Err} with an unmodifiable error list, or the same {@code Ok}
    * @throws NullPointerException if {@code mapper} is {@code null}
    */
   default <F> @NonNull Validated<T, F> mapErr(
@@ -224,7 +224,7 @@ public sealed interface Validated<T, E> permits Validated.Ok, Validated.Err {
    *
    * @param mapper mapper for error lists
    * @param <F> mapped error type
-   * @return mapped {@code Err}, or the same {@code Ok}
+   * @return mapped {@code Err} with an unmodifiable error list, or the same {@code Ok}
    * @throws NullPointerException if {@code mapper} or its result is {@code null}
    */
   default <F> @NonNull Validated<T, F> mapErrs(
@@ -245,7 +245,7 @@ public sealed interface Validated<T, E> permits Validated.Ok, Validated.Err {
    * @param validations validations to partition
    * @param <T> success value type
    * @param <E> error value type
-   * @return partitioned validations
+   * @return partitioned validations with unmodifiable lists
    * @throws NullPointerException if {@code validations} or any element is {@code null}
    */
   static <T, E> @NonNull Partition<T, E> partition(
@@ -270,7 +270,7 @@ public sealed interface Validated<T, E> permits Validated.Ok, Validated.Err {
    * @param validations validations to sequence
    * @param <T> success value type
    * @param <E> error value type
-   * @return sequenced validation
+   * @return sequenced validation with an unmodifiable success list or error list
    * @throws NullPointerException if {@code validations} or any element is {@code null}
    */
   static <T, E> @NonNull Validated<List<T>, E> sequence(
@@ -300,7 +300,7 @@ public sealed interface Validated<T, E> permits Validated.Ok, Validated.Err {
    * @param <T> input value type
    * @param <U> success value type
    * @param <E> error value type
-   * @return traversed validation
+   * @return traversed validation with an unmodifiable success list or error list
    * @throws NullPointerException if {@code values}, {@code mapper}, or any mapped validation is
    *     {@code null}
    */
@@ -332,7 +332,8 @@ public sealed interface Validated<T, E> permits Validated.Ok, Validated.Err {
    * @param combiner combiner for success values
    * @param <T> success value type
    * @param <E> error value type
-   * @return combined validation; returns {@code Ok(null)} when empty and error-free
+   * @return combined validation with an unmodifiable error list; returns {@code Ok(null)} when
+   *     empty and error-free
    * @throws NullPointerException if {@code validations} or {@code combiner} is {@code null}
    */
   static <T, E> @NonNull Validated<T, E> combineAll(
@@ -387,8 +388,8 @@ public sealed interface Validated<T, E> permits Validated.Ok, Validated.Err {
   /**
    * Holder for partitioned validations.
    *
-   * @param oks success values
-   * @param errs error values
+   * @param oks unmodifiable success values
+   * @param errs unmodifiable error values
    * @param <T> success value type
    * @param <E> error value type
    */
@@ -414,7 +415,7 @@ public sealed interface Validated<T, E> permits Validated.Ok, Validated.Err {
   /**
    * A failed validation with accumulated errors.
    *
-   * @param errors the errors list
+   * @param errors the unmodifiable errors list
    */
   record Err<T, E>(@NonNull List<@Nullable E> errors) implements Validated<T, E> {
     public Err {
