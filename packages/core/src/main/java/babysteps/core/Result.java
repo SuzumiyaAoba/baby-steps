@@ -259,7 +259,8 @@ public sealed interface Result<T, E> permits Result.Ok, Result.Err {
    * @return a recovered {@code Ok} or the original {@code Ok}
    * @throws NullPointerException if {@code mapper} is {@code null}
    */
-  default Result<T, E> recover(@NonNull Function<? super @Nullable E, ? extends @Nullable T> mapper) {
+  default Result<T, E> recover(
+      @NonNull Function<? super @Nullable E, ? extends @Nullable T> mapper) {
     Objects.requireNonNull(mapper, "mapper");
     if (isOk()) {
       return this;
@@ -468,8 +469,7 @@ public sealed interface Result<T, E> permits Result.Ok, Result.Err {
    * @throws NullPointerException if {@code onOk} or {@code onErr} is {@code null}
    */
   default Result<T, E> tapBoth(
-      @NonNull Consumer<? super @Nullable T> onOk,
-      @NonNull Consumer<? super @Nullable E> onErr) {
+      @NonNull Consumer<? super @Nullable T> onOk, @NonNull Consumer<? super @Nullable E> onErr) {
     Objects.requireNonNull(onOk, "onOk");
     Objects.requireNonNull(onErr, "onErr");
     if (isOk()) {
