@@ -234,6 +234,48 @@ class OptionTest {
   }
 
   @Test
+  void zip_withNoneAndSome_expectedNoneAndMapperNotCalled() {
+    // Arrange
+    final var called = new AtomicBoolean(false);
+    final var left = Option.<String>none();
+    final var right = Option.some("b");
+
+    // Act
+    final var result =
+        left.zip(
+            right,
+            (l, r) -> {
+              called.set(true);
+              return l + r;
+            });
+
+    // Assert
+    softly.assertThat(result.isEmpty()).isTrue();
+    softly.assertThat(called).isFalse();
+  }
+
+  @Test
+  void zip_withNoneAndNone_expectedNoneAndMapperNotCalled() {
+    // Arrange
+    final var called = new AtomicBoolean(false);
+    final var left = Option.<String>none();
+    final var right = Option.<String>none();
+
+    // Act
+    final var result =
+        left.zip(
+            right,
+            (l, r) -> {
+              called.set(true);
+              return l + r;
+            });
+
+    // Assert
+    softly.assertThat(result.isEmpty()).isTrue();
+    softly.assertThat(called).isFalse();
+  }
+
+  @Test
   void zip_withNullMappedValue_expectedSomeNull() {
     // Arrange
     final var left = Option.some("a");
