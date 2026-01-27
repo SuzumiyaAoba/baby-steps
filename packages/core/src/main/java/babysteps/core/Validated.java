@@ -528,11 +528,6 @@ public sealed interface Validated<T, E> permits Validated.Ok, Validated.Err {
   }
 
   /**
-   * A successful validation.
-   *
-   * @param value the success value, possibly {@code null}
-   */
-  /**
    * Holder for partitioned validations.
    *
    * @param oks unmodifiable success values
@@ -542,6 +537,11 @@ public sealed interface Validated<T, E> permits Validated.Ok, Validated.Err {
    */
   record Partition<T, E>(@NonNull List<T> oks, @NonNull List<@Nullable E> errs) {}
 
+  /**
+   * A successful validation.
+   *
+   * @param value the success value, possibly {@code null}
+   */
   record Ok<T, E>(@Nullable T value) implements Validated<T, E> {
     /**
      * Returns {@code true} for {@code Ok}.
