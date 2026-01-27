@@ -911,6 +911,30 @@ class ValidatedTest {
   }
 
   @Test
+  void contains_withOkAndNull_expectedTrue() {
+    // Arrange
+    final var sut = Validated.<String, String>ok(null);
+
+    // Act
+    final var result = sut.contains(null);
+
+    // Assert
+    softly.assertThat(result).isTrue();
+  }
+
+  @Test
+  void contains_withErr_expectedFalse() {
+    // Arrange
+    final var sut = Validated.<String, String>errs(List.of("error"));
+
+    // Act
+    final var result = sut.contains("value");
+
+    // Assert
+    softly.assertThat(result).isFalse();
+  }
+
+  @Test
   void containsErr_withErr_expectedComparison() {
     // Arrange
     final var sut = Validated.<String, String>errs(List.of("error1", "error2"));
@@ -922,6 +946,30 @@ class ValidatedTest {
     // Assert
     softly.assertThat(same).isTrue();
     softly.assertThat(different).isFalse();
+  }
+
+  @Test
+  void containsErr_withOk_expectedFalse() {
+    // Arrange
+    final var sut = Validated.ok("value");
+
+    // Act
+    final var result = sut.containsErr("error");
+
+    // Assert
+    softly.assertThat(result).isFalse();
+  }
+
+  @Test
+  void containsErr_withErrAndNull_expectedTrue() {
+    // Arrange
+    final var sut = Validated.<String, String>errs(java.util.Arrays.asList("error", null));
+
+    // Act
+    final var result = sut.containsErr(null);
+
+    // Assert
+    softly.assertThat(result).isTrue();
   }
 
   @Test
