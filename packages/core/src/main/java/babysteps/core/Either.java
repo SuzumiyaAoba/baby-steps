@@ -4,6 +4,7 @@ import java.util.Objects;
 import java.util.Optional;
 import java.util.function.Consumer;
 import java.util.function.Function;
+import java.util.function.Predicate;
 import java.util.function.Supplier;
 import org.jspecify.annotations.NonNull;
 import org.jspecify.annotations.Nullable;
@@ -313,6 +314,22 @@ public sealed interface Either<L, R> permits Either.Left, Either.Right {
   }
 
   /**
+   * Fold the {@code Either} into a value by supplying handlers for both cases.
+   *
+   * @param ifLeft supplier for the left case
+   * @param ifRight supplier for the right case
+   * @param <U> result type
+   * @return result of the chosen supplier
+   * @throws NullPointerException if {@code ifLeft} or {@code ifRight} is {@code null}
+   */
+  default <U> @Nullable U fold(
+      @NonNull Supplier<? extends U> ifLeft, @NonNull Supplier<? extends U> ifRight) {
+    Objects.requireNonNull(ifLeft, "ifLeft");
+    Objects.requireNonNull(ifRight, "ifRight");
+    return isRight() ? ifRight.get() : ifLeft.get();
+  }
+
+  /**
    * Perform a side effect for {@code Right} without changing the result.
    *
    * @param action consumer for the right value
@@ -468,6 +485,123 @@ public sealed interface Either<L, R> permits Either.Left, Either.Right {
    */
   default boolean containsLeft(@Nullable L other) {
     return isLeft() && Objects.equals(unwrapLeft(), other);
+  }
+
+  /**
+   * Returns {@code true} if this is {@code Right} and the value matches {@code predicate}.
+   *
+   * @param predicate predicate applied to the right value
+   * @return {@code true} when {@code Right} and predicate returns {@code true}
+   * @throws NullPointerException if {@code predicate} is {@code null}
+   */
+  default boolean isRightAnd(@NonNull Predicate<? super @Nullable R> predicate) {
+    Objects.requireNonNull(predicate, "predicate");
+    return isRight() && predicate.test(unwrapRight());
+  }
+
+  /**
+   * Returns {@code true} if this is {@code Left} and the value matches {@code predicate}.
+   *
+   * @param predicate predicate applied to the left value
+   * @return {@code true} when {@code Left} and predicate returns {@code true}
+   * @throws NullPointerException if {@code predicate} is {@code null}
+   */
+  default boolean isLeftAnd(@NonNull Predicate<? super @Nullable L> predicate) {
+    Objects.requireNonNull(predicate, "predicate");
+    return isLeft() && predicate.test(unwrapLeft());
+  }
+
+  /**
+   * Returns the mapped right value or {@code fallback} for {@code Left}.
+   *
+   * @param fallback the value to return for {@code Left}, possibly {@code null}
+   * @param mapper the mapper applied to the right value
+   * @param <U> the mapped value type
+   * @return the mapped value or {@code fallback}
+   * @throws NullPointerException if {@code mapper} is {@code null}
+   */
+  default <U> @Nullable U mapRightOr(
+      @Nullable U fallback, @NonNull Function<? super @Nullable R, ? extends U> mapper) {
+    Objects.requireNonNull(mapper, "mapper");
+    if (isRight()) {
+      return mapper.apply(unwrapRight());
+    }
+    return fallback;
+  }
+
+  /**
+   * Returns the mapped left value or {@code fallback} for {@code Right}.
+   *
+   * @param fallback the value to return for {@code Right}, possibly {@code null}
+   * @param mapper the mapper applied to the left value
+   * @param <U> the mapped value type
+   * @return the mapped value or {@code fallback}
+   * @throws NullPointerException if {@code mapper} is {@code null}
+   */
+  default <U> @Nullable U mapLeftOr(
+      @Nullable U fallback, @NonNull Function<? super @Nullable L, ? extends U> mapper) {
+    Objects.requireNonNull(mapper, "mapper");
+    if (isLeft()) {
+      return mapper.apply(unwrapLeft());
+    }
+    return fallback;
+  }
+
+  /**
+   * Returns the mapped right value or the supplied fallback for {@code Left}.
+   *
+   * @param fallback the supplier used for {@code Left}
+   * @param mapper the mapper applied to the right value
+   * @param <U> the mapped value type
+   * @return the mapped value or the supplied fallback, possibly {@code null}
+   * @throws NullPointerException if {@code fallback} or {@code mapper} is {@code null}
+   */
+  default <U> @Nullable U mapRightOrElse(
+      @NonNull Supplier<? extends @Nullable U> fallback,
+      @NonNull Function<? super @Nullable R, ? extends U> mapper) {
+    Objects.requireNonNull(fallback, "fallback");
+    Objects.requireNonNull(mapper, "mapper");
+    if (isRight()) {
+      return mapper.apply(unwrapRight());
+    }
+    return fallback.get();
+  }
+
+  /**
+   * Returns the mapped left value or the supplied fallback for {@code Right}.
+   *
+   * @param fallback the supplier used for {@code Right}
+   * @param mapper the mapper applied to the left value
+   * @param <U> the mapped value type
+   * @return the mapped value or the supplied fallback, possibly {@code null}
+   * @throws NullPointerException if {@code fallback} or {@code mapper} is {@code null}
+   */
+  default <U> @Nullable U mapLeftOrElse(
+      @NonNull Supplier<? extends @Nullable U> fallback,
+      @NonNull Function<? super @Nullable L, ? extends U> mapper) {
+    Objects.requireNonNull(fallback, "fallback");
+    Objects.requireNonNull(mapper, "mapper");
+    if (isLeft()) {
+      return mapper.apply(unwrapLeft());
+    }
+    return fallback.get();
+  }
+
+  /**
+   * Flattens a nested {@code Either} when this is {@code Right}.
+   *
+   * @param <U> inner right value type
+   * @return the flattened {@code Either}
+   * @throws NullPointerException if this is {@code Right} with {@code null} or not an {@code
+   *     Either}
+   */
+  @SuppressWarnings("unchecked")
+  default <U> @NonNull Either<L, U> flatten() {
+    if (isLeft()) {
+      return left(unwrapLeft());
+    }
+    final var nested = (Either<L, U>) Objects.requireNonNull(unwrapRight(), "value");
+    return Objects.requireNonNull(nested, "nested");
   }
 
   /**
