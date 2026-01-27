@@ -1129,6 +1129,25 @@ class EitherTest {
   }
 
   @Test
+  void isRightAnd_withNonMatchingRight_expectedFalse() {
+    // Arrange
+    final var called = new AtomicBoolean(false);
+    final var sut = Either.<String, String>right("value");
+
+    // Act
+    final var result =
+        sut.isRightAnd(
+            value -> {
+              called.set(true);
+              return value.startsWith("nope");
+            });
+
+    // Assert
+    softly.assertThat(result).isFalse();
+    softly.assertThat(called).isTrue();
+  }
+
+  @Test
   void isRightAnd_withLeft_expectedFalse() {
     // Arrange
     final var called = new AtomicBoolean(false);
@@ -1179,6 +1198,25 @@ class EitherTest {
 
     // Assert
     softly.assertThat(result).isTrue();
+    softly.assertThat(called).isTrue();
+  }
+
+  @Test
+  void isLeftAnd_withNonMatchingLeft_expectedFalse() {
+    // Arrange
+    final var called = new AtomicBoolean(false);
+    final var sut = Either.<String, String>left("error");
+
+    // Act
+    final var result =
+        sut.isLeftAnd(
+            value -> {
+              called.set(true);
+              return value.startsWith("nope");
+            });
+
+    // Assert
+    softly.assertThat(result).isFalse();
     softly.assertThat(called).isTrue();
   }
 
