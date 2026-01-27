@@ -219,6 +219,149 @@ public sealed interface Validated<T, E> permits Validated.Ok, Validated.Err {
     return zip(other, combiner);
   }
 
+  /**
+   * Maps the error list while preserving successes.
+   *
+   * @param mapper mapper for error lists
+   * @param <F> mapped error type
+   * @return mapped {@code Err}, or the same {@code Ok}
+   * @throws NullPointerException if {@code mapper} or its result is {@code null}
+   */
+  default <F> @NonNull Validated<T, F> mapErrs(
+      @NonNull Function<? super @NonNull List<@Nullable E>, ? extends List<@Nullable F>> mapper) {
+    Objects.requireNonNull(mapper, "mapper");
+    if (isOk()) {
+      @SuppressWarnings("unchecked")
+      final var self = (Validated<T, F>) this;
+      return self;
+    }
+    final var mapped = Objects.requireNonNull(mapper.apply(unwrapErrs()), "errors");
+    return new Err<>(mapped);
+  }
+
+  /**
+   * Partition validations into success values and accumulated error values.
+   *
+   * @param validations validations to partition
+   * @param <T> success value type
+   * @param <E> error value type
+   * @return partitioned validations
+   * @throws NullPointerException if {@code validations} or any element is {@code null}
+   */
+  static <T, E> @NonNull Partition<T, E> partition(
+      @NonNull Collection<? extends Validated<? extends T, ? extends E>> validations) {
+    Objects.requireNonNull(validations, "validations");
+    final var oks = new ArrayList<T>();
+    final var errs = new ArrayList<@Nullable E>();
+    for (final var validation : validations) {
+      Objects.requireNonNull(validation, "validation");
+      if (validation.isOk()) {
+        oks.add(validation.unwrap());
+      } else {
+        errs.addAll(validation.unwrapErrs());
+      }
+    }
+    return new Partition<>(List.copyOf(oks), List.copyOf(errs));
+  }
+
+  /**
+   * Converts a collection of validations into a validation of list, accumulating errors.
+   *
+   * @param validations validations to sequence
+   * @param <T> success value type
+   * @param <E> error value type
+   * @return sequenced validation
+   * @throws NullPointerException if {@code validations} or any element is {@code null}
+   */
+  static <T, E> @NonNull Validated<List<T>, E> sequence(
+      @NonNull Collection<? extends Validated<? extends T, E>> validations) {
+    Objects.requireNonNull(validations, "validations");
+    final var values = new ArrayList<T>();
+    final var errors = new ArrayList<@Nullable E>();
+    for (final var validation : validations) {
+      Objects.requireNonNull(validation, "validation");
+      if (validation.isOk()) {
+        values.add(validation.unwrap());
+      } else {
+        errors.addAll(validation.unwrapErrs());
+      }
+    }
+    if (errors.isEmpty()) {
+      return ok(List.copyOf(values));
+    }
+    return errList(errors);
+  }
+
+  /**
+   * Applies {@code mapper} to each value and accumulates errors across results.
+   *
+   * @param values values to validate
+   * @param mapper mapper producing validations
+   * @param <T> input value type
+   * @param <U> success value type
+   * @param <E> error value type
+   * @return traversed validation
+   * @throws NullPointerException if {@code values}, {@code mapper}, or any mapped validation is
+   *     {@code null}
+   */
+  static <T, U, E> @NonNull Validated<List<U>, E> traverse(
+      @NonNull Collection<? extends T> values,
+      @NonNull Function<? super T, ? extends Validated<? extends U, E>> mapper) {
+    Objects.requireNonNull(values, "values");
+    Objects.requireNonNull(mapper, "mapper");
+    final var results = new ArrayList<U>();
+    final var errors = new ArrayList<@Nullable E>();
+    for (final var value : values) {
+      final var validation = Objects.requireNonNull(mapper.apply(value), "validation");
+      if (validation.isOk()) {
+        results.add(validation.unwrap());
+      } else {
+        errors.addAll(validation.unwrapErrs());
+      }
+    }
+    if (errors.isEmpty()) {
+      return ok(List.copyOf(results));
+    }
+    return errList(errors);
+  }
+
+  /**
+   * Combines all {@code Ok} values using {@code combiner}, accumulating errors.
+   *
+   * @param validations validations to combine
+   * @param combiner combiner for success values
+   * @param <T> success value type
+   * @param <E> error value type
+   * @return combined validation; returns {@code Ok(null)} when empty and error-free
+   * @throws NullPointerException if {@code validations} or {@code combiner} is {@code null}
+   */
+  static <T, E> @NonNull Validated<T, E> combineAll(
+      @NonNull Collection<? extends Validated<? extends T, E>> validations,
+      @NonNull BiFunction<? super @Nullable T, ? super @Nullable T, ? extends T> combiner) {
+    Objects.requireNonNull(validations, "validations");
+    Objects.requireNonNull(combiner, "combiner");
+    final var errors = new ArrayList<@Nullable E>();
+    var hasValue = false;
+    @Nullable T combined = null;
+    for (final var validation : validations) {
+      Objects.requireNonNull(validation, "validation");
+      if (validation.isOk()) {
+        if (!hasValue) {
+          combined = validation.unwrap();
+          hasValue = true;
+        } else {
+          combined = combiner.apply(combined, validation.unwrap());
+        }
+      } else {
+        errors.addAll(validation.unwrapErrs());
+      }
+    }
+    if (!errors.isEmpty()) {
+      return errList(errors);
+    }
+    return ok(combined);
+  }
+
   private static <T, E> @NonNull Validated<T, E> errList(@NonNull List<@Nullable E> errors) {
     return new Err<>(errors);
   }
@@ -236,6 +379,16 @@ public sealed interface Validated<T, E> permits Validated.Ok, Validated.Err {
    *
    * @param value the success value, possibly {@code null}
    */
+  /**
+   * Holder for partitioned validations.
+   *
+   * @param oks success values
+   * @param errs error values
+   * @param <T> success value type
+   * @param <E> error value type
+   */
+  record Partition<T, E>(@NonNull List<T> oks, @NonNull List<@Nullable E> errs) {}
+
   record Ok<T, E>(@Nullable T value) implements Validated<T, E> {
     @Override
     public boolean isOk() {

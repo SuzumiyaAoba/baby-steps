@@ -312,6 +312,145 @@ class ValidatedTest {
   }
 
   @Test
+  void mapErrs_withErr_expectedMappedErrors() {
+    // Arrange
+    final var sut = Validated.<String, String>errs(List.of("error1", "error2"));
+
+    // Act
+    final var result = sut.mapErrs(errors -> List.of(errors.get(1), errors.get(0)));
+
+    // Assert
+    softly.assertThat(result.isErr()).isTrue();
+    softly.assertThat(result.unwrapErrs()).containsExactly("error2", "error1");
+  }
+
+  @Test
+  void mapErrs_withOk_expectedOk() {
+    // Arrange
+    final var sut = Validated.ok("value");
+
+    // Act
+    final var result = sut.mapErrs(errors -> List.of("mapped"));
+
+    // Assert
+    softly.assertThat(result.isOk()).isTrue();
+    softly.assertThat(result.unwrap()).isEqualTo("value");
+  }
+
+  @Test
+  void partition_withMixed_expectedSplit() {
+    // Arrange
+    final var first = Validated.<String, String>ok("value1");
+    final var second = Validated.<String, String>errs(List.of("error1", "error2"));
+    final var third = Validated.<String, String>ok("value2");
+
+    // Act
+    final var result = Validated.partition(List.of(first, second, third));
+
+    // Assert
+    softly.assertThat(result.oks()).containsExactly("value1", "value2");
+    softly.assertThat(result.errs()).containsExactly("error1", "error2");
+  }
+
+  @Test
+  void sequence_withAllOk_expectedOkList() {
+    // Arrange
+    final var validations =
+        List.of(Validated.<String, String>ok("value1"), Validated.<String, String>ok("value2"));
+
+    // Act
+    final var result = Validated.sequence(validations);
+
+    // Assert
+    softly.assertThat(result.isOk()).isTrue();
+    softly.assertThat(result.unwrap()).containsExactly("value1", "value2");
+  }
+
+  @Test
+  void sequence_withErrs_expectedAccumulatedErrors() {
+    // Arrange
+    final var validations =
+        List.of(
+            Validated.<String, String>errs(List.of("error1", "error2")),
+            Validated.<String, String>ok("value"),
+            Validated.<String, String>err("error3"));
+
+    // Act
+    final var result = Validated.sequence(validations);
+
+    // Assert
+    softly.assertThat(result.isErr()).isTrue();
+    softly.assertThat(result.unwrapErrs()).containsExactly("error1", "error2", "error3");
+  }
+
+  @Test
+  void traverse_withAllOk_expectedOkList() {
+    // Arrange
+    final var values = List.of("a", "b");
+
+    // Act
+    final var result = Validated.traverse(values, value -> Validated.ok(value + "!"));
+
+    // Assert
+    softly.assertThat(result.isOk()).isTrue();
+    softly.assertThat(result.unwrap()).containsExactly("a!", "b!");
+  }
+
+  @Test
+  void traverse_withErrs_expectedAccumulatedErrors() {
+    // Arrange
+    final var values = List.of("a", "b", "c");
+    final var validations =
+        List.of(
+            Validated.<String, String>ok("value"),
+            Validated.<String, String>err("error1"),
+            Validated.<String, String>err("error2"));
+    final var index = new java.util.concurrent.atomic.AtomicInteger();
+
+    // Act
+    final var result =
+        Validated.traverse(values, value -> validations.get(index.getAndIncrement()));
+
+    // Assert
+    softly.assertThat(result.isErr()).isTrue();
+    softly.assertThat(result.unwrapErrs()).containsExactly("error1", "error2");
+  }
+
+  @Test
+  void combineAll_withOkValues_expectedCombined() {
+    // Arrange
+    final var validations =
+        List.of(
+            Validated.<String, String>ok("a"),
+            Validated.<String, String>ok("b"),
+            Validated.<String, String>ok("c"));
+
+    // Act
+    final var result = Validated.combineAll(validations, (left, right) -> left + right);
+
+    // Assert
+    softly.assertThat(result.isOk()).isTrue();
+    softly.assertThat(result.unwrap()).isEqualTo("abc");
+  }
+
+  @Test
+  void combineAll_withErrs_expectedAccumulatedErrors() {
+    // Arrange
+    final var validations =
+        List.of(
+            Validated.<String, String>ok("a"),
+            Validated.<String, String>errs(List.of("error1", "error2")),
+            Validated.<String, String>err("error3"));
+
+    // Act
+    final var result = Validated.combineAll(validations, (left, right) -> left + right);
+
+    // Assert
+    softly.assertThat(result.isErr()).isTrue();
+    softly.assertThat(result.unwrapErrs()).containsExactly("error1", "error2", "error3");
+  }
+
+  @Test
   void okEquality_expectedTrue() {
     // Arrange
     final var left = Validated.<String, String>ok("value");
@@ -384,6 +523,19 @@ class ValidatedTest {
 
     // Act
     final var action = (ThrowingCallable) () -> sut.mapErr(null);
+
+    // Assert
+    softly.assertThatThrownBy(action).isInstanceOf(NullPointerException.class).hasMessage("mapper");
+  }
+
+  @Test
+  @SuppressWarnings("ConstantConditions")
+  void mapErrs_withNullMapper_expectedException() {
+    // Arrange
+    final var sut = Validated.<String, String>err("error");
+
+    // Act
+    final var action = (ThrowingCallable) () -> sut.mapErrs(null);
 
     // Assert
     softly.assertThatThrownBy(action).isInstanceOf(NullPointerException.class).hasMessage("mapper");
