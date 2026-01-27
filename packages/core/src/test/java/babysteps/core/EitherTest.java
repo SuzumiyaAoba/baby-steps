@@ -785,6 +785,75 @@ class EitherTest {
   }
 
   @Test
+  void fold_withSuppliersLeft_expectedLeftSupplier() {
+    // Arrange
+    final var rightCalled = new AtomicBoolean(false);
+    final var sut = Either.<String, String>left("error");
+
+    // Act
+    final var result =
+        sut.fold(
+            () -> "left",
+            () -> {
+              rightCalled.set(true);
+              return "right";
+            });
+
+    // Assert
+    softly.assertThat(result).isEqualTo("left");
+    softly.assertThat(rightCalled).isFalse();
+  }
+
+  @Test
+  void fold_withSuppliersRight_expectedRightSupplier() {
+    // Arrange
+    final var leftCalled = new AtomicBoolean(false);
+    final var sut = Either.<String, String>right("value");
+
+    // Act
+    final var result =
+        sut.fold(
+            () -> {
+              leftCalled.set(true);
+              return "left";
+            },
+            () -> "right");
+
+    // Assert
+    softly.assertThat(result).isEqualTo("right");
+    softly.assertThat(leftCalled).isFalse();
+  }
+
+  @Test
+  @SuppressWarnings("ConstantConditions")
+  void fold_withSuppliersNullLeft_expectedException() {
+    // Arrange
+    final var sut = Either.<String, String>left("error");
+
+    // Act
+    final var action = (ThrowingCallable) () -> sut.fold(null, () -> "right");
+
+    // Assert
+    softly.assertThatThrownBy(action).isInstanceOf(NullPointerException.class).hasMessage("ifLeft");
+  }
+
+  @Test
+  @SuppressWarnings("ConstantConditions")
+  void fold_withSuppliersNullRight_expectedException() {
+    // Arrange
+    final var sut = Either.<String, String>right("value");
+
+    // Act
+    final var action = (ThrowingCallable) () -> sut.fold(() -> "left", null);
+
+    // Assert
+    softly
+        .assertThatThrownBy(action)
+        .isInstanceOf(NullPointerException.class)
+        .hasMessage("ifRight");
+  }
+
+  @Test
   void swap_withLeft_expectedRight() {
     // Arrange
     final var sut = Either.<String, String>left("error");
@@ -1038,5 +1107,463 @@ class EitherTest {
 
     // Assert
     softly.assertThat(result).isFalse();
+  }
+
+  @Test
+  void isRightAnd_withMatchingRight_expectedTrue() {
+    // Arrange
+    final var called = new AtomicBoolean(false);
+    final var sut = Either.<String, String>right("value");
+
+    // Act
+    final var result =
+        sut.isRightAnd(
+            value -> {
+              called.set(true);
+              return value.startsWith("val");
+            });
+
+    // Assert
+    softly.assertThat(result).isTrue();
+    softly.assertThat(called).isTrue();
+  }
+
+  @Test
+  void isRightAnd_withNonMatchingRight_expectedFalse() {
+    // Arrange
+    final var called = new AtomicBoolean(false);
+    final var sut = Either.<String, String>right("value");
+
+    // Act
+    final var result =
+        sut.isRightAnd(
+            value -> {
+              called.set(true);
+              return value.startsWith("nope");
+            });
+
+    // Assert
+    softly.assertThat(result).isFalse();
+    softly.assertThat(called).isTrue();
+  }
+
+  @Test
+  void isRightAnd_withLeft_expectedFalse() {
+    // Arrange
+    final var called = new AtomicBoolean(false);
+    final var sut = Either.<String, String>left("error");
+
+    // Act
+    final var result =
+        sut.isRightAnd(
+            value -> {
+              called.set(true);
+              return value.startsWith("val");
+            });
+
+    // Assert
+    softly.assertThat(result).isFalse();
+    softly.assertThat(called).isFalse();
+  }
+
+  @Test
+  @SuppressWarnings("ConstantConditions")
+  void isRightAnd_withNullPredicate_expectedException() {
+    // Arrange
+    final var sut = Either.<String, String>right("value");
+
+    // Act
+    final var action = (ThrowingCallable) () -> sut.isRightAnd(null);
+
+    // Assert
+    softly
+        .assertThatThrownBy(action)
+        .isInstanceOf(NullPointerException.class)
+        .hasMessage("predicate");
+  }
+
+  @Test
+  void isLeftAnd_withMatchingLeft_expectedTrue() {
+    // Arrange
+    final var called = new AtomicBoolean(false);
+    final var sut = Either.<String, String>left("error");
+
+    // Act
+    final var result =
+        sut.isLeftAnd(
+            value -> {
+              called.set(true);
+              return value.startsWith("err");
+            });
+
+    // Assert
+    softly.assertThat(result).isTrue();
+    softly.assertThat(called).isTrue();
+  }
+
+  @Test
+  void isLeftAnd_withNonMatchingLeft_expectedFalse() {
+    // Arrange
+    final var called = new AtomicBoolean(false);
+    final var sut = Either.<String, String>left("error");
+
+    // Act
+    final var result =
+        sut.isLeftAnd(
+            value -> {
+              called.set(true);
+              return value.startsWith("nope");
+            });
+
+    // Assert
+    softly.assertThat(result).isFalse();
+    softly.assertThat(called).isTrue();
+  }
+
+  @Test
+  void isLeftAnd_withRight_expectedFalse() {
+    // Arrange
+    final var called = new AtomicBoolean(false);
+    final var sut = Either.<String, String>right("value");
+
+    // Act
+    final var result =
+        sut.isLeftAnd(
+            value -> {
+              called.set(true);
+              return value.startsWith("err");
+            });
+
+    // Assert
+    softly.assertThat(result).isFalse();
+    softly.assertThat(called).isFalse();
+  }
+
+  @Test
+  @SuppressWarnings("ConstantConditions")
+  void isLeftAnd_withNullPredicate_expectedException() {
+    // Arrange
+    final var sut = Either.<String, String>left("error");
+
+    // Act
+    final var action = (ThrowingCallable) () -> sut.isLeftAnd(null);
+
+    // Assert
+    softly
+        .assertThatThrownBy(action)
+        .isInstanceOf(NullPointerException.class)
+        .hasMessage("predicate");
+  }
+
+  @Test
+  void mapRightOr_withRight_expectedMapped() {
+    // Arrange
+    final var called = new AtomicBoolean(false);
+    final var sut = Either.<String, String>right("value");
+
+    // Act
+    final var result =
+        sut.mapRightOr(
+            "fallback",
+            value -> {
+              called.set(true);
+              return value + "!";
+            });
+
+    // Assert
+    softly.assertThat(result).isEqualTo("value!");
+    softly.assertThat(called).isTrue();
+  }
+
+  @Test
+  void mapRightOr_withLeft_expectedFallback() {
+    // Arrange
+    final var called = new AtomicBoolean(false);
+    final var sut = Either.<String, String>left("error");
+
+    // Act
+    final var result =
+        sut.mapRightOr(
+            "fallback",
+            value -> {
+              called.set(true);
+              return value + "!";
+            });
+
+    // Assert
+    softly.assertThat(result).isEqualTo("fallback");
+    softly.assertThat(called).isFalse();
+  }
+
+  @Test
+  @SuppressWarnings("ConstantConditions")
+  void mapRightOr_withNullMapper_expectedException() {
+    // Arrange
+    final var sut = Either.<String, String>right("value");
+
+    // Act
+    final var action = (ThrowingCallable) () -> sut.mapRightOr("fallback", null);
+
+    // Assert
+    softly.assertThatThrownBy(action).isInstanceOf(NullPointerException.class).hasMessage("mapper");
+  }
+
+  @Test
+  void mapLeftOr_withLeft_expectedMapped() {
+    // Arrange
+    final var called = new AtomicBoolean(false);
+    final var sut = Either.<String, String>left("error");
+
+    // Act
+    final var result =
+        sut.mapLeftOr(
+            "fallback",
+            value -> {
+              called.set(true);
+              return value + "!";
+            });
+
+    // Assert
+    softly.assertThat(result).isEqualTo("error!");
+    softly.assertThat(called).isTrue();
+  }
+
+  @Test
+  void mapLeftOr_withRight_expectedFallback() {
+    // Arrange
+    final var called = new AtomicBoolean(false);
+    final var sut = Either.<String, String>right("value");
+
+    // Act
+    final var result =
+        sut.mapLeftOr(
+            "fallback",
+            value -> {
+              called.set(true);
+              return value + "!";
+            });
+
+    // Assert
+    softly.assertThat(result).isEqualTo("fallback");
+    softly.assertThat(called).isFalse();
+  }
+
+  @Test
+  @SuppressWarnings("ConstantConditions")
+  void mapLeftOr_withNullMapper_expectedException() {
+    // Arrange
+    final var sut = Either.<String, String>left("error");
+
+    // Act
+    final var action = (ThrowingCallable) () -> sut.mapLeftOr("fallback", null);
+
+    // Assert
+    softly.assertThatThrownBy(action).isInstanceOf(NullPointerException.class).hasMessage("mapper");
+  }
+
+  @Test
+  void mapRightOrElse_withRight_expectedMappedAndSupplierNotCalled() {
+    // Arrange
+    final var fallbackCalled = new AtomicBoolean(false);
+    final var mapperCalled = new AtomicBoolean(false);
+    final var sut = Either.<String, String>right("value");
+
+    // Act
+    final var result =
+        sut.mapRightOrElse(
+            () -> {
+              fallbackCalled.set(true);
+              return "fallback";
+            },
+            value -> {
+              mapperCalled.set(true);
+              return value + "!";
+            });
+
+    // Assert
+    softly.assertThat(result).isEqualTo("value!");
+    softly.assertThat(fallbackCalled).isFalse();
+    softly.assertThat(mapperCalled).isTrue();
+  }
+
+  @Test
+  void mapRightOrElse_withLeft_expectedFallback() {
+    // Arrange
+    final var fallbackCalled = new AtomicBoolean(false);
+    final var mapperCalled = new AtomicBoolean(false);
+    final var sut = Either.<String, String>left("error");
+
+    // Act
+    final var result =
+        sut.mapRightOrElse(
+            () -> {
+              fallbackCalled.set(true);
+              return "fallback";
+            },
+            value -> {
+              mapperCalled.set(true);
+              return value + "!";
+            });
+
+    // Assert
+    softly.assertThat(result).isEqualTo("fallback");
+    softly.assertThat(fallbackCalled).isTrue();
+    softly.assertThat(mapperCalled).isFalse();
+  }
+
+  @Test
+  @SuppressWarnings("ConstantConditions")
+  void mapRightOrElse_withNullFallback_expectedException() {
+    // Arrange
+    final var sut = Either.<String, String>left("error");
+
+    // Act
+    final var action = (ThrowingCallable) () -> sut.mapRightOrElse(null, value -> value);
+
+    // Assert
+    softly
+        .assertThatThrownBy(action)
+        .isInstanceOf(NullPointerException.class)
+        .hasMessage("fallback");
+  }
+
+  @Test
+  @SuppressWarnings("ConstantConditions")
+  void mapRightOrElse_withNullMapper_expectedException() {
+    // Arrange
+    final var sut = Either.<String, String>right("value");
+
+    // Act
+    final var action = (ThrowingCallable) () -> sut.mapRightOrElse(() -> "fallback", null);
+
+    // Assert
+    softly.assertThatThrownBy(action).isInstanceOf(NullPointerException.class).hasMessage("mapper");
+  }
+
+  @Test
+  void mapLeftOrElse_withLeft_expectedMappedAndSupplierNotCalled() {
+    // Arrange
+    final var fallbackCalled = new AtomicBoolean(false);
+    final var mapperCalled = new AtomicBoolean(false);
+    final var sut = Either.<String, String>left("error");
+
+    // Act
+    final var result =
+        sut.mapLeftOrElse(
+            () -> {
+              fallbackCalled.set(true);
+              return "fallback";
+            },
+            value -> {
+              mapperCalled.set(true);
+              return value + "!";
+            });
+
+    // Assert
+    softly.assertThat(result).isEqualTo("error!");
+    softly.assertThat(fallbackCalled).isFalse();
+    softly.assertThat(mapperCalled).isTrue();
+  }
+
+  @Test
+  void mapLeftOrElse_withRight_expectedFallback() {
+    // Arrange
+    final var fallbackCalled = new AtomicBoolean(false);
+    final var mapperCalled = new AtomicBoolean(false);
+    final var sut = Either.<String, String>right("value");
+
+    // Act
+    final var result =
+        sut.mapLeftOrElse(
+            () -> {
+              fallbackCalled.set(true);
+              return "fallback";
+            },
+            value -> {
+              mapperCalled.set(true);
+              return value + "!";
+            });
+
+    // Assert
+    softly.assertThat(result).isEqualTo("fallback");
+    softly.assertThat(fallbackCalled).isTrue();
+    softly.assertThat(mapperCalled).isFalse();
+  }
+
+  @Test
+  @SuppressWarnings("ConstantConditions")
+  void mapLeftOrElse_withNullFallback_expectedException() {
+    // Arrange
+    final var sut = Either.<String, String>right("value");
+
+    // Act
+    final var action = (ThrowingCallable) () -> sut.mapLeftOrElse(null, value -> value);
+
+    // Assert
+    softly
+        .assertThatThrownBy(action)
+        .isInstanceOf(NullPointerException.class)
+        .hasMessage("fallback");
+  }
+
+  @Test
+  @SuppressWarnings("ConstantConditions")
+  void mapLeftOrElse_withNullMapper_expectedException() {
+    // Arrange
+    final var sut = Either.<String, String>left("error");
+
+    // Act
+    final var action = (ThrowingCallable) () -> sut.mapLeftOrElse(() -> "fallback", null);
+
+    // Assert
+    softly.assertThatThrownBy(action).isInstanceOf(NullPointerException.class).hasMessage("mapper");
+  }
+
+  @Test
+  void flatten_withLeft_expectedLeft() {
+    // Arrange
+    final var sut = Either.<String, Either<String, String>>left("error");
+
+    // Act
+    final var result = sut.flatten();
+
+    // Assert
+    softly.assertThat(result.unwrapLeft()).isEqualTo("error");
+  }
+
+  @Test
+  void flatten_withNestedRight_expectedInner() {
+    // Arrange
+    final var sut = Either.<String, Either<String, String>>right(Either.right("value"));
+
+    // Act
+    final var result = sut.flatten();
+
+    // Assert
+    softly.assertThat(result.unwrapRight()).isEqualTo("value");
+  }
+
+  @Test
+  void flatten_withNestedLeft_expectedInnerLeft() {
+    // Arrange
+    final var sut = Either.<String, Either<String, String>>right(Either.left("error"));
+
+    // Act
+    final var result = sut.flatten();
+
+    // Assert
+    softly.assertThat(result.unwrapLeft()).isEqualTo("error");
+  }
+
+  @Test
+  void flatten_withNullRight_expectedException() {
+    // Arrange
+    final var sut = Either.<String, Either<String, String>>right(null);
+
+    // Act
+    final var action = (ThrowingCallable) sut::flatten;
+
+    // Assert
+    softly.assertThatThrownBy(action).isInstanceOf(NullPointerException.class).hasMessage("value");
   }
 }
