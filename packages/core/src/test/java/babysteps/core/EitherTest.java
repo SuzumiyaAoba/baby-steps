@@ -787,25 +787,41 @@ class EitherTest {
   @Test
   void fold_withSuppliersLeft_expectedLeftSupplier() {
     // Arrange
+    final var rightCalled = new AtomicBoolean(false);
     final var sut = Either.<String, String>left("error");
 
     // Act
-    final var result = sut.fold(() -> "left", () -> "right");
+    final var result =
+        sut.fold(
+            () -> "left",
+            () -> {
+              rightCalled.set(true);
+              return "right";
+            });
 
     // Assert
     softly.assertThat(result).isEqualTo("left");
+    softly.assertThat(rightCalled).isFalse();
   }
 
   @Test
   void fold_withSuppliersRight_expectedRightSupplier() {
     // Arrange
+    final var leftCalled = new AtomicBoolean(false);
     final var sut = Either.<String, String>right("value");
 
     // Act
-    final var result = sut.fold(() -> "left", () -> "right");
+    final var result =
+        sut.fold(
+            () -> {
+              leftCalled.set(true);
+              return "left";
+            },
+            () -> "right");
 
     // Assert
     softly.assertThat(result).isEqualTo("right");
+    softly.assertThat(leftCalled).isFalse();
   }
 
   @Test
@@ -1108,13 +1124,20 @@ class EitherTest {
   @Test
   void isRightAnd_withLeft_expectedFalse() {
     // Arrange
+    final var called = new AtomicBoolean(false);
     final var sut = Either.<String, String>left("error");
 
     // Act
-    final var result = sut.isRightAnd(value -> value.startsWith("val"));
+    final var result =
+        sut.isRightAnd(
+            value -> {
+              called.set(true);
+              return value.startsWith("val");
+            });
 
     // Assert
     softly.assertThat(result).isFalse();
+    softly.assertThat(called).isFalse();
   }
 
   @Test
@@ -1148,13 +1171,20 @@ class EitherTest {
   @Test
   void isLeftAnd_withRight_expectedFalse() {
     // Arrange
+    final var called = new AtomicBoolean(false);
     final var sut = Either.<String, String>right("value");
 
     // Act
-    final var result = sut.isLeftAnd(value -> value.startsWith("err"));
+    final var result =
+        sut.isLeftAnd(
+            value -> {
+              called.set(true);
+              return value.startsWith("err");
+            });
 
     // Assert
     softly.assertThat(result).isFalse();
+    softly.assertThat(called).isFalse();
   }
 
   @Test
@@ -1188,13 +1218,21 @@ class EitherTest {
   @Test
   void mapRightOr_withLeft_expectedFallback() {
     // Arrange
+    final var called = new AtomicBoolean(false);
     final var sut = Either.<String, String>left("error");
 
     // Act
-    final var result = sut.mapRightOr("fallback", value -> value + "!");
+    final var result =
+        sut.mapRightOr(
+            "fallback",
+            value -> {
+              called.set(true);
+              return value + "!";
+            });
 
     // Assert
     softly.assertThat(result).isEqualTo("fallback");
+    softly.assertThat(called).isFalse();
   }
 
   @Test
@@ -1225,13 +1263,21 @@ class EitherTest {
   @Test
   void mapLeftOr_withRight_expectedFallback() {
     // Arrange
+    final var called = new AtomicBoolean(false);
     final var sut = Either.<String, String>right("value");
 
     // Act
-    final var result = sut.mapLeftOr("fallback", value -> value + "!");
+    final var result =
+        sut.mapLeftOr(
+            "fallback",
+            value -> {
+              called.set(true);
+              return value + "!";
+            });
 
     // Assert
     softly.assertThat(result).isEqualTo("fallback");
+    softly.assertThat(called).isFalse();
   }
 
   @Test
@@ -1270,13 +1316,21 @@ class EitherTest {
   @Test
   void mapRightOrElse_withLeft_expectedFallback() {
     // Arrange
+    final var called = new AtomicBoolean(false);
     final var sut = Either.<String, String>left("error");
 
     // Act
-    final var result = sut.mapRightOrElse(() -> "fallback", value -> value + "!");
+    final var result =
+        sut.mapRightOrElse(
+            () -> "fallback",
+            value -> {
+              called.set(true);
+              return value + "!";
+            });
 
     // Assert
     softly.assertThat(result).isEqualTo("fallback");
+    softly.assertThat(called).isFalse();
   }
 
   @Test
@@ -1331,13 +1385,21 @@ class EitherTest {
   @Test
   void mapLeftOrElse_withRight_expectedFallback() {
     // Arrange
+    final var called = new AtomicBoolean(false);
     final var sut = Either.<String, String>right("value");
 
     // Act
-    final var result = sut.mapLeftOrElse(() -> "fallback", value -> value + "!");
+    final var result =
+        sut.mapLeftOrElse(
+            () -> "fallback",
+            value -> {
+              called.set(true);
+              return value + "!";
+            });
 
     // Assert
     softly.assertThat(result).isEqualTo("fallback");
+    softly.assertThat(called).isFalse();
   }
 
   @Test
