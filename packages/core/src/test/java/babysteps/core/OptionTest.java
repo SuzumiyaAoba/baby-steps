@@ -182,6 +182,20 @@ class OptionTest {
   }
 
   @Test
+  @SuppressWarnings("ConstantConditions")
+  void map_withNullResult_expectedSomeNull() {
+    // Arrange
+    final var sut = Option.some("value");
+
+    // Act
+    final var result = sut.map(value -> null);
+
+    // Assert
+    softly.assertThat(result.isPresent()).isTrue();
+    softly.assertThat(result.get()).isNull();
+  }
+
+  @Test
   void map_withNone_expectedNone() {
     // Arrange
     final var sut = Option.<String>none();
@@ -191,6 +205,73 @@ class OptionTest {
 
     // Assert
     softly.assertThat(result.isEmpty()).isTrue();
+  }
+
+  @Test
+  void zip_withTwoSomes_expectedCombinedValue() {
+    // Arrange
+    final var left = Option.some("a");
+    final var right = Option.some("b");
+
+    // Act
+    final var result = left.zip(right, (l, r) -> l + r);
+
+    // Assert
+    softly.assertThat(result.get()).isEqualTo("ab");
+  }
+
+  @Test
+  void zip_withSomeAndNone_expectedNone() {
+    // Arrange
+    final var left = Option.some("a");
+    final var right = Option.<String>none();
+
+    // Act
+    final var result = left.zip(right, (l, r) -> l + r);
+
+    // Assert
+    softly.assertThat(result.isEmpty()).isTrue();
+  }
+
+  @Test
+  void zip_withNullMappedValue_expectedSomeNull() {
+    // Arrange
+    final var left = Option.some("a");
+    final var right = Option.some("b");
+
+    // Act
+    final var result = left.zip(right, (l, r) -> null);
+
+    // Assert
+    softly.assertThat(result.isPresent()).isTrue();
+    softly.assertThat(result.get()).isNull();
+  }
+
+  @Test
+  @SuppressWarnings("ConstantConditions")
+  void zip_withNullOther_expectedException() {
+    // Arrange
+    final var left = Option.some("a");
+
+    // Act
+    final var action = (ThrowingCallable) () -> left.zip(null, (l, r) -> l + r);
+
+    // Assert
+    softly.assertThatThrownBy(action).isInstanceOf(NullPointerException.class).hasMessage("other");
+  }
+
+  @Test
+  @SuppressWarnings("ConstantConditions")
+  void zip_withNullMapper_expectedException() {
+    // Arrange
+    final var left = Option.some("a");
+    final var right = Option.some("b");
+
+    // Act
+    final var action = (ThrowingCallable) () -> left.zip(right, null);
+
+    // Assert
+    softly.assertThatThrownBy(action).isInstanceOf(NullPointerException.class).hasMessage("mapper");
   }
 
   @Test
