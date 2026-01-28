@@ -811,8 +811,8 @@ public sealed interface Result<T, E> permits Result.Ok, Result.Err {
       }
     }
     return new Partition<>(
-        Collections.unmodifiableList(new ArrayList<>(oks)),
-        Collections.unmodifiableList(new ArrayList<>(errs)));
+        Collections.unmodifiableList(oks),
+        Collections.unmodifiableList(errs));
   }
 
   /**
@@ -835,7 +835,7 @@ public sealed interface Result<T, E> permits Result.Ok, Result.Err {
       }
       values.add(result.unwrap());
     }
-    return ok(Collections.unmodifiableList(new ArrayList<>(values)));
+    return ok(Collections.unmodifiableList(values));
   }
 
   /**
@@ -863,7 +863,7 @@ public sealed interface Result<T, E> permits Result.Ok, Result.Err {
       }
       results.add(result.unwrap());
     }
-    return ok(Collections.unmodifiableList(new ArrayList<>(results)));
+    return ok(Collections.unmodifiableList(results));
   }
 
   /**
