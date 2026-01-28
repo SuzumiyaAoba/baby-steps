@@ -1,4 +1,4 @@
-package babysteps.fp;
+package babysteps.core;
 
 /**
  * Function that allows checked exceptions.

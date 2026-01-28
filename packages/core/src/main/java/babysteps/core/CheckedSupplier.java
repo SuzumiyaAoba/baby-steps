@@ -1,4 +1,4 @@
-package babysteps.fp;
+package babysteps.core;
 
 /**
  * Supplier that allows checked exceptions.

@@ -38,17 +38,17 @@
   - [x] Factories/ops/transformations/exception paths
   - [x] equals/hashCode/toString behavior
 
-### 2) fp: Checked functional interfaces
+### 2) core: Checked functional interfaces
 - [x] New interfaces
   - [x] `CheckedSupplier<T>`
   - [x] `CheckedFunction<T, R>`
   - [x] `CheckedConsumer<T>`
-- [x] Lift/bridge helpers
-  - [x] Lift into `Try` (e.g., `Try.of(checked)`)
-  - [x] Lift into `Result` (e.g., `Result.of(checked, errorMapper)`)
-  - [x] Add helpers to `Functions`
+- [x] Result helpers
+  - [x] `Result.of(CheckedSupplier, errorMapper)`
+  - [x] `Result.from(CheckedFunction, errorMapper)`
+  - [x] `Result.fromConsumer(CheckedConsumer, errorMapper)`
 - [x] Tests
-  - [x] Exceptions are captured into `Try/Result`
+  - [x] Exceptions are captured into `Result`
   - [x] Happy-path value propagation
 
 ### 3) Tuples expansion (fp)

@@ -48,6 +48,78 @@ public sealed interface Result<T, E> permits Result.Ok, Result.Err {
   }
 
   /**
+   * Executes a checked supplier and captures exceptions as {@code Err}.
+   *
+   * @param supplier checked supplier
+   * @param errorMapper error mapping function
+   * @param <T> success value type
+   * @param <E> error value type
+   * @return {@code Ok} on success, otherwise {@code Err}
+   * @throws NullPointerException if {@code supplier} or {@code errorMapper} is {@code null}
+   */
+  static <T, E> @NonNull Result<T, E> of(
+      @NonNull CheckedSupplier<? extends T> supplier,
+      @NonNull Function<? super Exception, ? extends E> errorMapper) {
+    Objects.requireNonNull(supplier, "supplier");
+    Objects.requireNonNull(errorMapper, "errorMapper");
+    try {
+      return ok(supplier.get());
+    } catch (Exception exception) {
+      return err(errorMapper.apply(exception));
+    }
+  }
+
+  /**
+   * Lifts a checked function into a function returning {@code Result}.
+   *
+   * @param fn checked function
+   * @param errorMapper error mapping function
+   * @param <T> input type
+   * @param <R> success value type
+   * @param <E> error value type
+   * @return function that captures exceptions as {@code Err}
+   * @throws NullPointerException if {@code fn} or {@code errorMapper} is {@code null}
+   */
+  static <T, R, E> @NonNull Function<@Nullable T, Result<R, E>> from(
+      @NonNull CheckedFunction<? super @Nullable T, ? extends R> fn,
+      @NonNull Function<? super Exception, ? extends E> errorMapper) {
+    Objects.requireNonNull(fn, "fn");
+    Objects.requireNonNull(errorMapper, "errorMapper");
+    return value -> {
+      try {
+        return ok(fn.apply(value));
+      } catch (Exception exception) {
+        return err(errorMapper.apply(exception));
+      }
+    };
+  }
+
+  /**
+   * Lifts a checked consumer into a function returning {@code Result}.
+   *
+   * @param consumer checked consumer
+   * @param errorMapper error mapping function
+   * @param <T> input type
+   * @param <E> error value type
+   * @return function that captures exceptions as {@code Err}
+   * @throws NullPointerException if {@code consumer} or {@code errorMapper} is {@code null}
+   */
+  static <T, E> @NonNull Function<@Nullable T, Result<Unit, E>> fromConsumer(
+      @NonNull CheckedConsumer<? super @Nullable T> consumer,
+      @NonNull Function<? super Exception, ? extends E> errorMapper) {
+    Objects.requireNonNull(consumer, "consumer");
+    Objects.requireNonNull(errorMapper, "errorMapper");
+    return value -> {
+      try {
+        consumer.accept(value);
+        return ok(Unit.instance());
+      } catch (Exception exception) {
+        return err(errorMapper.apply(exception));
+      }
+    };
+  }
+
+  /**
    * Returns {@code true} if this result is {@code Ok}.
    *
    * @return {@code true} for {@code Ok}, {@code false} for {@code Err}

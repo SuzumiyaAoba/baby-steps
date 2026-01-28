@@ -2,6 +2,7 @@ package babysteps.core;
 
 import java.util.List;
 import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicReference;
 import org.assertj.core.api.SoftAssertions;
 import org.assertj.core.api.ThrowableAssert.ThrowingCallable;
@@ -1514,6 +1515,107 @@ class ResultTest {
     // Assert
     softly.assertThat(result.isErr()).isTrue();
     softly.assertThat(result.unwrapErr()).isEqualTo("error");
+  }
+
+  @Test
+  void of_whenSuccess_expectedOk() {
+    // Act
+    final var result = Result.of(() -> "value", error -> "error");
+
+    // Assert
+    softly.assertThat(result).isEqualTo(Result.ok("value"));
+  }
+
+  @Test
+  void of_whenFailure_expectedErrAndMapperCalled() {
+    // Arrange
+    final var exception = new Exception("boom");
+    final var errorRef = new AtomicReference<Exception>();
+
+    // Act
+    final var result =
+        Result.of(
+            () -> {
+              throw exception;
+            },
+            error -> {
+              errorRef.set(error);
+              return "mapped";
+            });
+
+    // Assert
+    softly.assertThat(result.isErr()).isTrue();
+    softly.assertThat(result.unwrapErr()).isEqualTo("mapped");
+    softly.assertThat(errorRef.get()).isSameAs(exception);
+  }
+
+  @Test
+  void from_whenSuccess_expectedOk() {
+    // Arrange
+    final var fn = Result.from(String::length, error -> "error");
+
+    // Act
+    final var result = fn.apply("value");
+
+    // Assert
+    softly.assertThat(result).isEqualTo(Result.ok(5));
+  }
+
+  @Test
+  void from_whenFailure_expectedErr() {
+    // Arrange
+    final var exception = new Exception("boom");
+    final var fn =
+        Result.from(
+            value -> {
+              throw exception;
+            },
+            error -> error.getMessage());
+
+    // Act
+    final var result = fn.apply("value");
+
+    // Assert
+    softly.assertThat(result.isErr()).isTrue();
+    softly.assertThat(result.unwrapErr()).isEqualTo("boom");
+  }
+
+  @Test
+  void fromConsumer_whenSuccess_expectedOk() {
+    // Arrange
+    final var calls = new AtomicInteger(0);
+    final var fn =
+        Result.fromConsumer(
+            value -> {
+              calls.incrementAndGet();
+            },
+            error -> "error");
+
+    // Act
+    final var result = fn.apply("value");
+
+    // Assert
+    softly.assertThat(calls.get()).isEqualTo(1);
+    softly.assertThat(result).isEqualTo(Result.ok(Unit.instance()));
+  }
+
+  @Test
+  void fromConsumer_whenFailure_expectedErr() {
+    // Arrange
+    final var exception = new Exception("boom");
+    final var fn =
+        Result.fromConsumer(
+            value -> {
+              throw exception;
+            },
+            error -> error.getMessage());
+
+    // Act
+    final var result = fn.apply("value");
+
+    // Assert
+    softly.assertThat(result.isErr()).isTrue();
+    softly.assertThat(result.unwrapErr()).isEqualTo("boom");
   }
 
   @Test

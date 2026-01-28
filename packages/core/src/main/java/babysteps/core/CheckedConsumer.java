@@ -1,4 +1,4 @@
-package babysteps.fp;
+package babysteps.core;
 
 /**
  * Consumer that allows checked exceptions.
