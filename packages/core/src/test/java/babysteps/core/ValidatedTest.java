@@ -205,7 +205,8 @@ class ValidatedTest {
     // Act
     final var action =
         (ThrowingCallable)
-            () -> sut.unwrapOrThrow(errors -> new IllegalArgumentException(String.join(",", errors)));
+            () ->
+                sut.unwrapOrThrow(errors -> new IllegalArgumentException(String.join(",", errors)));
 
     // Assert
     softly
@@ -235,10 +236,7 @@ class ValidatedTest {
     final var action = (ThrowingCallable) () -> sut.expect("boom");
 
     // Assert
-    softly
-        .assertThatThrownBy(action)
-        .isInstanceOf(IllegalStateException.class)
-        .hasMessage("boom");
+    softly.assertThatThrownBy(action).isInstanceOf(IllegalStateException.class).hasMessage("boom");
   }
 
   @Test
@@ -262,10 +260,7 @@ class ValidatedTest {
     final var action = (ThrowingCallable) () -> sut.expectErrs("boom");
 
     // Assert
-    softly
-        .assertThatThrownBy(action)
-        .isInstanceOf(IllegalStateException.class)
-        .hasMessage("boom");
+    softly.assertThatThrownBy(action).isInstanceOf(IllegalStateException.class).hasMessage("boom");
   }
 
   @Test

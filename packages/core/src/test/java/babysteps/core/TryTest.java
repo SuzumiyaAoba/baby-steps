@@ -232,10 +232,7 @@ class TryTest {
     final var action = (ThrowingCallable) () -> sut.orElseThrow(() -> new RuntimeException("nope"));
 
     // Assert
-    softly
-        .assertThatThrownBy(action)
-        .isInstanceOf(RuntimeException.class)
-        .hasMessage("nope");
+    softly.assertThatThrownBy(action).isInstanceOf(RuntimeException.class).hasMessage("nope");
   }
 
   @Test
