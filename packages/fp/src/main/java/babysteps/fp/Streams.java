@@ -8,6 +8,7 @@ import java.util.Collections;
 import java.util.HashSet;
 import java.util.Iterator;
 import java.util.List;
+import java.util.NoSuchElementException;
 import java.util.Objects;
 import java.util.Spliterator;
 import java.util.Spliterators;
@@ -113,6 +114,9 @@ public final class Streams {
 
           @Override
           public List<T> next() {
+            if (!iterator.hasNext()) {
+              throw new NoSuchElementException();
+            }
             final var values = new ArrayList<T>(size);
             while (iterator.hasNext() && values.size() < size) {
               values.add(iterator.next());
@@ -204,10 +208,21 @@ public final class Streams {
 
           @Override
           public List<T> next() {
+            if (!initialized) {
+              fillToSize();
+              initialized = true;
+            }
+            if (buffer.isEmpty()) {
+              throw new NoSuchElementException();
+            }
             final var window = Collections.unmodifiableList(new ArrayList<>(buffer));
             var toDrop = step;
             while (toDrop > 0 && !buffer.isEmpty()) {
               buffer.removeFirst();
+              toDrop--;
+            }
+            while (toDrop > 0 && iterator.hasNext()) {
+              iterator.next();
               toDrop--;
             }
             fillToSize();
