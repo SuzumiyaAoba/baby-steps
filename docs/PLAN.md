@@ -65,9 +65,9 @@
 - [ ] Interop with core/fp types (Option/Result/Validated)
 
 ### Stream helpers
-- [ ] Safe terminals (`first/last/single`)
-- [ ] Lazy/chunk helpers (`chunked`, `windowed`, etc.)
-- [ ] Exception handling with `Try/Result`
+- [x] Safe terminals (`first/last/single`)
+- [x] Lazy/chunk helpers (`chunked`, `windowed`, etc.)
+- [x] Exception handling with `Try/Result`
 
 ## Long-Term Plan (io + concurrency + testing)
 ### IO
