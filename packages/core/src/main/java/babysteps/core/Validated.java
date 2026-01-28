@@ -762,7 +762,7 @@ public sealed interface Validated<T, E> permits Validated.Ok, Validated.Err {
   record Err<T, E>(@NonNull List<@Nullable E> errors) implements Validated<T, E> {
     public Err {
       Objects.requireNonNull(errors, "errors");
-      errors = Collections.unmodifiableList(new ArrayList<>(errors));
+      errors = Collections.unmodifiableList(errors);
     }
 
     Err(@NonNull Collection<? extends @Nullable E> errors) {
