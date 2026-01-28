@@ -28,6 +28,24 @@ public record Tuple2<A, B>(@Nullable A first, @Nullable B second) {
   }
 
   /**
+   * Returns the first element.
+   *
+   * @return the first element
+   */
+  public @Nullable A _1() {
+    return first;
+  }
+
+  /**
+   * Returns the second element.
+   *
+   * @return the second element
+   */
+  public @Nullable B _2() {
+    return second;
+  }
+
+  /**
    * Swap the tuple elements.
    *
    * @return a swapped tuple

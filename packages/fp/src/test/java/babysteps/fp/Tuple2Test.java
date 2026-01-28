@@ -19,6 +19,8 @@ class Tuple2Test {
     // Assert
     softly.assertThat(result.first()).isEqualTo("left");
     softly.assertThat(result.second()).isEqualTo("right");
+    softly.assertThat(result._1()).isEqualTo("left");
+    softly.assertThat(result._2()).isEqualTo("right");
   }
 
   @Test
