@@ -590,10 +590,12 @@ public sealed interface Either<L, R> permits Either.Left, Either.Right {
   /**
    * Flattens a nested {@code Either} when this is {@code Right}.
    *
+   * <p>Uses {@link #unwrapRight()} and casts the right value to {@code Either<L, U>}.
+   *
    * @param <U> inner right value type
    * @return the flattened {@code Either}
-   * @throws NullPointerException if this is {@code Right} with {@code null} or not an {@code
-   *     Either}
+   * @throws ClassCastException if the right value is not an {@code Either}
+   * @throws NullPointerException if this is {@code Right} with {@code null}
    */
   @SuppressWarnings("unchecked")
   default <U> @NonNull Either<L, U> flatten() {

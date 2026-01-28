@@ -1,4 +1,4 @@
-## Coding Style
+# Coding Style
 
 - Prefer a functional style in application code, for example by using `Stream` and `Optional`.
 - Prefer an imperative style in library code when it offers a significant performance advantage.

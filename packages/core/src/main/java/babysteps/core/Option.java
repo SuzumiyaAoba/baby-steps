@@ -3,6 +3,7 @@ package babysteps.core;
 import java.util.NoSuchElementException;
 import java.util.Objects;
 import java.util.Optional;
+import java.util.function.BiFunction;
 import java.util.function.Consumer;
 import java.util.function.Function;
 import java.util.function.Predicate;
@@ -230,18 +231,18 @@ public sealed interface Option<T> permits Option.Some, Option.None {
   }
 
   /**
-   * Transform the value when present.
+   * Transform the value when present, preserving {@code null} results as {@link Some}.
    *
    * @param mapper mapping function
    * @param <U> result type
-   * @return mapped Option
+   * @return mapped Option, including {@code Some(null)} when mapper returns {@code null}
    */
   default <U> @NonNull Option<U> map(@NonNull Function<? super @Nullable T, ? extends U> mapper) {
     Objects.requireNonNull(mapper, "mapper");
     if (isEmpty()) {
       return none();
     }
-    return Option.ofNullable(mapper.apply(get()));
+    return Option.some(mapper.apply(get()));
   }
 
   /**
@@ -292,6 +293,28 @@ public sealed interface Option<T> permits Option.Some, Option.None {
     @SuppressWarnings("unchecked")
     final var mapped = (Option<U>) mapper.apply(get());
     return Objects.requireNonNull(mapped, "mapped");
+  }
+
+  /**
+   * Combine two Options by applying the mapper when both are present.
+   *
+   * <p>{@code null} results from the mapper are preserved as {@link Some}.
+   *
+   * @param other other Option to combine
+   * @param mapper combining function
+   * @param <U> other value type
+   * @param <R> result type
+   * @return combined Option or {@link None} when either is empty
+   */
+  default <U, R> @NonNull Option<R> zip(
+      @NonNull Option<? extends U> other,
+      @NonNull BiFunction<? super @Nullable T, ? super @Nullable U, ? extends R> mapper) {
+    Objects.requireNonNull(other, "other");
+    Objects.requireNonNull(mapper, "mapper");
+    if (isEmpty() || other.isEmpty()) {
+      return none();
+    }
+    return Option.some(mapper.apply(get(), other.get()));
   }
 
   /**
