@@ -49,6 +49,16 @@ class NonEmptyListTest {
   }
 
   @Test
+  void fromList_withNull_expectedException() {
+    // Arrange
+    // Act
+    final ThrowingCallable action = () -> NonEmptyList.fromList(null);
+
+    // Assert
+    softly.assertThatThrownBy(action).isInstanceOf(NullPointerException.class);
+  }
+
+  @Test
   void fromList_withValues_expectedSomeAndDefensiveCopy() {
     // Arrange
     final var values = new ArrayList<String>();
@@ -76,6 +86,16 @@ class NonEmptyListTest {
   }
 
   @Test
+  void fromIterable_withNull_expectedException() {
+    // Arrange
+    // Act
+    final ThrowingCallable action = () -> NonEmptyList.fromIterable(null);
+
+    // Assert
+    softly.assertThatThrownBy(action).isInstanceOf(NullPointerException.class);
+  }
+
+  @Test
   void fromIterable_withValues_expectedSome() {
     // Arrange
     final var values = List.of("a", "b");
@@ -96,6 +116,16 @@ class NonEmptyListTest {
 
     // Assert
     softly.assertThat(sut.head()).isNull();
+  }
+
+  @Test
+  void of_withNullRest_expectedException() {
+    // Arrange
+    // Act
+    final ThrowingCallable action = () -> NonEmptyList.of("a", (String[]) null);
+
+    // Assert
+    softly.assertThatThrownBy(action).isInstanceOf(NullPointerException.class);
   }
 
   @Test
@@ -136,6 +166,18 @@ class NonEmptyListTest {
   }
 
   @Test
+  void concat_withNull_expectedException() {
+    // Arrange
+    final var sut = NonEmptyList.of("a");
+
+    // Act
+    final ThrowingCallable action = () -> sut.concat(null);
+
+    // Assert
+    softly.assertThatThrownBy(action).isInstanceOf(NullPointerException.class);
+  }
+
+  @Test
   void map_withMapper_expectedMappedList() {
     // Arrange
     final var sut = NonEmptyList.of("a", "bb");
@@ -145,6 +187,18 @@ class NonEmptyListTest {
 
     // Assert
     softly.assertThat(result.toList()).containsExactly(1, 2);
+  }
+
+  @Test
+  void map_withNullMapper_expectedException() {
+    // Arrange
+    final var sut = NonEmptyList.of("a");
+
+    // Act
+    final ThrowingCallable action = () -> sut.map(null);
+
+    // Assert
+    softly.assertThatThrownBy(action).isInstanceOf(NullPointerException.class);
   }
 
   @Test
@@ -160,6 +214,30 @@ class NonEmptyListTest {
   }
 
   @Test
+  void flatMap_withNullMapper_expectedException() {
+    // Arrange
+    final var sut = NonEmptyList.of("a");
+
+    // Act
+    final ThrowingCallable action = () -> sut.flatMap(null);
+
+    // Assert
+    softly.assertThatThrownBy(action).isInstanceOf(NullPointerException.class);
+  }
+
+  @Test
+  void flatMap_withNullMapped_expectedException() {
+    // Arrange
+    final var sut = NonEmptyList.of("a");
+
+    // Act
+    final ThrowingCallable action = () -> sut.flatMap(value -> null);
+
+    // Assert
+    softly.assertThatThrownBy(action).isInstanceOf(NullPointerException.class);
+  }
+
+  @Test
   void fold_withValues_expectedAccumulatedValue() {
     // Arrange
     final var sut = NonEmptyList.of(1, 2, 3);
@@ -169,6 +247,18 @@ class NonEmptyListTest {
 
     // Assert
     softly.assertThat(result).isEqualTo(6);
+  }
+
+  @Test
+  void fold_withNullFolder_expectedException() {
+    // Arrange
+    final var sut = NonEmptyList.of(1);
+
+    // Act
+    final ThrowingCallable action = () -> sut.fold(0, null);
+
+    // Assert
+    softly.assertThatThrownBy(action).isInstanceOf(NullPointerException.class);
   }
 
   @Test
@@ -184,12 +274,38 @@ class NonEmptyListTest {
   }
 
   @Test
+  void tail_withSingle_expectedUnmodifiable() {
+    // Arrange
+    final var sut = NonEmptyList.of("a");
+
+    // Act
+    final ThrowingCallable action = () -> sut.tail().add("b");
+
+    // Assert
+    softly.assertThatThrownBy(action).isInstanceOf(UnsupportedOperationException.class);
+  }
+
+  @Test
   void toList_expectedUnmodifiable() {
     // Arrange
     final var sut = NonEmptyList.of("a");
 
     // Act
     final ThrowingCallable action = () -> sut.toList().add("b");
+
+    // Assert
+    softly.assertThatThrownBy(action).isInstanceOf(UnsupportedOperationException.class);
+  }
+
+  @Test
+  void iterator_remove_expectedException() {
+    // Arrange
+    final var sut = NonEmptyList.of("a", "b");
+    final var iterator = sut.iterator();
+    iterator.next();
+
+    // Act
+    final ThrowingCallable action = iterator::remove;
 
     // Assert
     softly.assertThatThrownBy(action).isInstanceOf(UnsupportedOperationException.class);
@@ -206,5 +322,56 @@ class NonEmptyListTest {
     // Assert
     softly.assertThat(result.isPresent()).isTrue();
     softly.assertThat(result.get().toList()).containsExactly("a", null, "c");
+  }
+
+  @Test
+  void equals_withSameValues_expectedTrueAndHashCodeMatch() {
+    // Arrange
+    final var left = NonEmptyList.of("a", "b");
+    final var right = NonEmptyList.of("a", "b");
+
+    // Act
+    final var result = left.equals(right);
+
+    // Assert
+    softly.assertThat(result).isTrue();
+    softly.assertThat(left.hashCode()).isEqualTo(right.hashCode());
+  }
+
+  @Test
+  void equals_withDifferentValues_expectedFalse() {
+    // Arrange
+    final var left = NonEmptyList.of("a");
+    final var right = NonEmptyList.of("b");
+
+    // Act
+    final var result = left.equals(right);
+
+    // Assert
+    softly.assertThat(result).isFalse();
+  }
+
+  @Test
+  void equals_withNonNonEmptyList_expectedFalse() {
+    // Arrange
+    final var sut = NonEmptyList.of("a");
+
+    // Act
+    final var result = sut.equals("a");
+
+    // Assert
+    softly.assertThat(result).isFalse();
+  }
+
+  @Test
+  void toString_expectedValue() {
+    // Arrange
+    final var sut = NonEmptyList.of("a", "b");
+
+    // Act
+    final var result = sut.toString();
+
+    // Assert
+    softly.assertThat(result).isEqualTo("NonEmptyList[a, b]");
   }
 }
