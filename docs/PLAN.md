@@ -1,63 +1,87 @@
-# Implementation Plan (Task List)
+# Implementation Plan (Updated: 2026-01-28)
 
 ## Goals
-- [ ] Provide a modular Java 21 library where users can adopt only the needed parts.
-- [ ] Support functional programming style with practical, ergonomic APIs.
-- [ ] Fill gaps in the Java standard library without replacing it wholesale.
+- [x] Modular Java 21 library where users can adopt only what they need
+- [x] Practical, ergonomic FP-style APIs
+- [x] Fill gaps in the Java standard library (without replacing it)
 
-## Near-Term Scope (core + fp)
+## Completed
 ### core
-- [ ] Option
-  - [x] Some/None, map/flatMap, filter, toOptional
-  - [x] fold, orElse, peek, contains, equals/hashCode tests
-- [ ] Result
-  - [x] Ok/Err, map/mapErr, flatMap, unwrap helpers
-  - [x] fold, recover, toOption, contains, equals/hashCode tests
-- [ ] Either
-  - [ ] Left/Right, map/mapLeft/mapRight, fold, swap
-  - [ ] toOption/toResult bridges, contains, equals/hashCode tests
-- [ ] Try
-  - [x] Capture checked exceptions into Result-like model
-- [ ] Unit
-  - [x] Singleton type to model void in FP pipelines
-- [x] Validated
-  - [x] Ok/Err with error accumulation, map/mapErr, fold
-  - [x] toResult/toOption bridges, combine helpers, equals/hashCode tests
-- [ ] NonEmptyList
-  - [ ] Factory/append/prepend, map/flatMap, toList
-  - [ ] Interop with Validated for error accumulation
-- [ ] Tuples
-  - [ ] Pair/Triple with mapLeft/mapRight (Pair) and map, equals/hashCode tests
+- [x] Option (Some/None, map/flatMap, filter, fold, toOptional, tests)
+- [x] Result (Ok/Err, map/mapErr, flatMap, fold, recover, toOption, tests)
+- [x] Either (Left/Right, map/flatMap, mapLeft, fold, swap, toOption/toResult, tests)
+- [x] Try (exception capture model, Result/Option bridges, tests)
+- [x] Unit (void substitute, tests)
+- [x] Validated (error accumulation, combine/zip/bridge, tests)
 
 ### fp
-- [ ] Functions
-  - [x] compose/pipe/curry
-  - [x] tupled/untupled, flip, partial, memoize
-- [ ] Checked functional interfaces
-  - [ ] CheckedSupplier/Function/Consumer and helpers to lift into Result/Try
-- [ ] Predicates
-  - [x] and/or/not combinators
-- [ ] Consumers
-  - [x] tee/tap for side effects without breaking chains
+- [x] Functions (compose/pipe/curry/partial/memoize/tupled, tests)
+- [x] Predicates (and/or/not, tests)
+- [x] Consumers (tee/tap, tests)
+- [x] Tuple2 (mapFirst/mapSecond/bimap/swap, tests)
 
-## Mid-Term Scope (collections + stream)
-- [ ] Immutable collections
-  - [ ] Persistent List/Map/Set
-  - [ ] Builders for efficient creation
-- [ ] Stream helpers
-  - [ ] Safe terminal ops (first/last/single)
-  - [ ] Lazy evaluation helpers and chunking
+## Near-Term Plan (core + fp)
+### 1) core: NonEmptyList
+- [ ] API design
+  - [ ] Factories: `of(...)`, `fromList(...)`, `fromIterable(...)`
+  - [ ] Base API: `head`, `tail`, `size`, `iterator`
+  - [ ] Immutability policy (defensive copy + `toList()` unmodifiable)
+- [ ] Transformations / operations
+  - [ ] `append` / `prepend` / `concat`
+  - [ ] `map` / `flatMap` / `fold`
+  - [ ] `toList`, `toArray` (if needed)
+- [ ] Validated integration
+  - [ ] Convenience API: `Validated.errs(NonEmptyList<E>)` (or bridge via `toList()`)
+  - [ ] Helper to accumulate multiple `Validated` into `NonEmptyList`
+- [ ] Tests
+  - [ ] Factories/ops/transformations/exception paths
+  - [ ] equals/hashCode/toString behavior
 
-## Longer-Term Scope (io + concurrency + testing)
-- [ ] IO
-  - [ ] Resource safety (try-with-resources helper types)
-  - [ ] Functional wrappers over Files/Paths
-- [ ] Concurrency
-  - [ ] Task/Promise, retry/backoff, timeout
-- [ ] Testing
-  - [ ] Property-based generators and matchers
+### 2) fp: Checked functional interfaces
+- [ ] New interfaces
+  - [ ] `CheckedSupplier<T>`
+  - [ ] `CheckedFunction<T, R>`
+  - [ ] `CheckedConsumer<T>`
+- [ ] Lift/bridge helpers
+  - [ ] Lift into `Try` (e.g., `Try.of(checked)`)
+  - [ ] Lift into `Result` (e.g., `Result.of(checked, errorMapper)`)
+  - [ ] Decide whether to add to `Functions` or introduce a new utility
+- [ ] Tests
+  - [ ] Exceptions are captured into `Try/Result`
+  - [ ] Happy-path value propagation
 
-## Packaging and Release
-- [ ] Publish each module independently under group `babysteps`.
-- [ ] Align versions across modules; semantic versioning.
-- [ ] Provide module-specific README with usage and migration notes.
+### 3) Tuples expansion (fp)
+- [ ] Add `Tuple3`
+  - [ ] `of`, `mapFirst`/`mapSecond`/`mapThird`, `bimap`/`trimap`
+  - [ ] Keep `swap` only for 2-element tuples; consider explicit `rotate` for 3
+- [ ] Tests
+  - [ ] Mapping functions and construction APIs
+
+## Mid-Term Plan (collections + stream)
+### Immutable collections
+- [ ] Decide persistence strategy for List/Map/Set (reuse vs custom)
+- [ ] Builder API (efficient construction)
+- [ ] Interop with core/fp types (Option/Result/Validated)
+
+### Stream helpers
+- [ ] Safe terminals (`first/last/single`)
+- [ ] Lazy/chunk helpers (`chunked`, `windowed`, etc.)
+- [ ] Exception handling with `Try/Result`
+
+## Long-Term Plan (io + concurrency + testing)
+### IO
+- [ ] try-with-resources safety helpers
+- [ ] Functional wrappers over `Files/Paths`
+
+### Concurrency
+- [ ] `Task/Promise` design
+- [ ] `retry/backoff`, `timeout`
+
+### Testing
+- [ ] Property-based generators and matchers
+- [ ] Standard generators for core/fp types
+
+## Docs / Release
+- [ ] Module-specific README (usage + migration notes)
+- [ ] Publishing steps under `babysteps` group
+- [ ] Versioning policy (SemVer)
