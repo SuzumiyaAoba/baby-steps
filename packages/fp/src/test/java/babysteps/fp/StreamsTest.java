@@ -1,6 +1,8 @@
 package babysteps.fp;
 
 import babysteps.core.Option;
+import babysteps.core.Try;
+import java.util.List;
 import java.util.stream.Stream;
 import org.assertj.core.api.SoftAssertions;
 import org.assertj.core.api.junit.jupiter.InjectSoftAssertions;
@@ -91,5 +93,120 @@ class StreamsTest {
 
     // Assert
     softly.assertThat(result).isEqualTo(Option.none());
+  }
+
+  @Test
+  void chunked_withValues_expectedChunks() {
+    // Arrange
+    // Act
+    final var result = Streams.chunked(Stream.of(1, 2, 3, 4, 5), 2).toList();
+
+    // Assert
+    softly.assertThat(result).containsExactly(List.of(1, 2), List.of(3, 4), List.of(5));
+  }
+
+  @Test
+  void windowed_withStep_expectedWindows() {
+    // Arrange
+    // Act
+    final var result = Streams.windowed(Stream.of(1, 2, 3, 4, 5), 3, 2).toList();
+
+    // Assert
+    softly.assertThat(result).containsExactly(List.of(1, 2, 3), List.of(3, 4, 5));
+  }
+
+  @Test
+  void windowed_withPartial_expectedPartialWindow() {
+    // Arrange
+    // Act
+    final var result = Streams.windowed(Stream.of(1, 2, 3), 2, 2, true).toList();
+
+    // Assert
+    softly.assertThat(result).containsExactly(List.of(1, 2), List.of(3));
+  }
+
+  @Test
+  void indexed_expectedIndexPairs() {
+    // Arrange
+    // Act
+    final var result = Streams.indexed(Stream.of("a", "b")).toList();
+
+    // Assert
+    softly.assertThat(result).containsExactly(Tuple2.of(0, "a"), Tuple2.of(1, "b"));
+  }
+
+  @Test
+  void takeWhileInclusive_expectedIncludeFirstFailure() {
+    // Arrange
+    // Act
+    final var result =
+        Streams.takeWhileInclusive(Stream.of(1, 2, 3, 4), value -> value < 3).toList();
+
+    // Assert
+    softly.assertThat(result).containsExactly(1, 2, 3);
+  }
+
+  @Test
+  void dropWhileInclusive_expectedDropFirstFailure() {
+    // Arrange
+    // Act
+    final var result =
+        Streams.dropWhileInclusive(Stream.of(1, 2, 3, 4), value -> value < 3).toList();
+
+    // Assert
+    softly.assertThat(result).containsExactly(4);
+  }
+
+  @Test
+  void distinctBy_expectedDistinctKeys() {
+    // Arrange
+    // Act
+    final var result = Streams.distinctBy(Stream.of("a", "aa", "b", "bb"), String::length).toList();
+
+    // Assert
+    softly.assertThat(result).containsExactly("a", "aa");
+  }
+
+  @Test
+  void mapCatching_whenFailure_expectedFailure() {
+    // Arrange
+    final var exception = new IllegalStateException("boom");
+
+    // Act
+    final var result =
+        Streams.mapCatching(
+                Stream.of("ok", "fail"),
+                value -> {
+                  if ("fail".equals(value)) {
+                    throw exception;
+                  }
+                  return value.length();
+                })
+            .toList();
+
+    // Assert
+    softly.assertThat(result.get(0)).isEqualTo(Try.success(2));
+    softly.assertThat(result.get(1)).isEqualTo(Try.failure(exception));
+  }
+
+  @Test
+  void filterCatching_whenPredicateThrows_expectedFailure() {
+    // Arrange
+    final var exception = new IllegalArgumentException("boom");
+
+    // Act
+    final var result =
+        Streams.filterCatching(
+                Stream.of("keep", "fail", "drop"),
+                value -> {
+                  if ("fail".equals(value)) {
+                    throw exception;
+                  }
+                  return "keep".equals(value);
+                })
+            .toList();
+
+    // Assert
+    softly.assertThat(result).containsExactly(Try.success("keep"), Try.failure(exception));
   }
 }

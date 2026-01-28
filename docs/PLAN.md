@@ -66,8 +66,8 @@
 
 ### Stream helpers
 - [x] Safe terminals (`first/last/single`)
-- [ ] Lazy/chunk helpers (`chunked`, `windowed`, etc.)
-- [ ] Exception handling with `Try/Result`
+- [x] Lazy/chunk helpers (`chunked`, `windowed`, etc.)
+- [x] Exception handling with `Try/Result`
 
 ## Long-Term Plan (io + concurrency + testing)
 ### IO

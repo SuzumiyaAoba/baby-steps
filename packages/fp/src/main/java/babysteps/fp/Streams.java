@@ -1,13 +1,24 @@
 package babysteps.fp;
 
 import babysteps.core.Option;
+import babysteps.core.Try;
+import java.util.ArrayDeque;
+import java.util.ArrayList;
+import java.util.HashSet;
 import java.util.Iterator;
+import java.util.List;
+import java.util.NoSuchElementException;
 import java.util.Objects;
+import java.util.Spliterator;
+import java.util.Spliterators;
+import java.util.function.Function;
+import java.util.function.Predicate;
 import java.util.stream.Stream;
+import java.util.stream.StreamSupport;
 import org.jspecify.annotations.NonNull;
 import org.jspecify.annotations.Nullable;
 
-/** Utility helpers for working with {@link Stream} terminals. */
+/** Utility helpers for working with {@link Stream}. */
 public final class Streams {
   private Streams() {}
 
@@ -71,5 +82,367 @@ public final class Streams {
       return Option.none();
     }
     return Option.some(value);
+  }
+
+  /**
+   * Splits a stream into consecutive chunks of the given size.
+   *
+   * <p>The last chunk may be smaller when the stream does not divide evenly.
+   *
+   * @param stream source stream
+   * @param size chunk size
+   * @param <T> element type
+   * @return stream of chunks
+   * @throws IllegalArgumentException if {@code size} is not positive
+   * @throws NullPointerException if {@code stream} is {@code null}
+   */
+  public static <T> @NonNull Stream<List<T>> chunked(
+      @NonNull Stream<? extends @Nullable T> stream, int size) {
+    Objects.requireNonNull(stream, "stream");
+    if (size <= 0) {
+      throw new IllegalArgumentException("size must be positive");
+    }
+    final var iterator = stream.iterator();
+    final var chunkIterator =
+        new Iterator<List<T>>() {
+          @Override
+          public boolean hasNext() {
+            return iterator.hasNext();
+          }
+
+          @Override
+          public List<T> next() {
+            if (!iterator.hasNext()) {
+              throw new NoSuchElementException();
+            }
+            final var values = new ArrayList<T>(size);
+            while (iterator.hasNext() && values.size() < size) {
+              values.add(iterator.next());
+            }
+            return List.copyOf(values);
+          }
+        };
+    return streamFromIterator(chunkIterator);
+  }
+
+  /**
+   * Creates sliding windows of the given size with step {@code 1} and no partial windows.
+   *
+   * @param stream source stream
+   * @param size window size
+   * @param <T> element type
+   * @return stream of windows
+   * @throws IllegalArgumentException if {@code size} is not positive
+   * @throws NullPointerException if {@code stream} is {@code null}
+   */
+  public static <T> @NonNull Stream<List<T>> windowed(
+      @NonNull Stream<? extends @Nullable T> stream, int size) {
+    return windowed(stream, size, 1, false);
+  }
+
+  /**
+   * Creates sliding windows of the given size and step, without partial windows.
+   *
+   * @param stream source stream
+   * @param size window size
+   * @param step steps between windows
+   * @param <T> element type
+   * @return stream of windows
+   * @throws IllegalArgumentException if {@code size} or {@code step} is not positive
+   * @throws NullPointerException if {@code stream} is {@code null}
+   */
+  public static <T> @NonNull Stream<List<T>> windowed(
+      @NonNull Stream<? extends @Nullable T> stream, int size, int step) {
+    return windowed(stream, size, step, false);
+  }
+
+  /**
+   * Creates sliding windows of the given size and step.
+   *
+   * @param stream source stream
+   * @param size window size
+   * @param step steps between windows
+   * @param partialWindows whether to include trailing partial windows
+   * @param <T> element type
+   * @return stream of windows
+   * @throws IllegalArgumentException if {@code size} or {@code step} is not positive
+   * @throws NullPointerException if {@code stream} is {@code null}
+   */
+  public static <T> @NonNull Stream<List<T>> windowed(
+      @NonNull Stream<? extends @Nullable T> stream, int size, int step, boolean partialWindows) {
+    Objects.requireNonNull(stream, "stream");
+    if (size <= 0) {
+      throw new IllegalArgumentException("size must be positive");
+    }
+    if (step <= 0) {
+      throw new IllegalArgumentException("step must be positive");
+    }
+    final var iterator = stream.iterator();
+    final var buffer = new ArrayDeque<T>(size);
+    final var windowIterator =
+        new Iterator<List<T>>() {
+          private boolean initialized;
+
+          private void fillToSize() {
+            while (buffer.size() < size && iterator.hasNext()) {
+              buffer.addLast(iterator.next());
+            }
+          }
+
+          @Override
+          public boolean hasNext() {
+            if (!initialized) {
+              fillToSize();
+              initialized = true;
+            }
+            if (buffer.isEmpty()) {
+              return false;
+            }
+            if (buffer.size() == size) {
+              return true;
+            }
+            return partialWindows;
+          }
+
+          @Override
+          public List<T> next() {
+            if (!hasNext()) {
+              throw new NoSuchElementException();
+            }
+            final var window = List.copyOf(buffer);
+            var toDrop = step;
+            while (toDrop > 0 && !buffer.isEmpty()) {
+              buffer.removeFirst();
+              toDrop--;
+            }
+            fillToSize();
+            return window;
+          }
+        };
+    return streamFromIterator(windowIterator);
+  }
+
+  /**
+   * Enumerates values with a zero-based index.
+   *
+   * @param stream source stream
+   * @param <T> element type
+   * @return stream of index/value pairs
+   * @throws NullPointerException if {@code stream} is {@code null}
+   */
+  public static <T> @NonNull Stream<Tuple2<Integer, T>> indexed(
+      @NonNull Stream<? extends @Nullable T> stream) {
+    Objects.requireNonNull(stream, "stream");
+    final var iterator = stream.iterator();
+    final var indexedIterator =
+        new Iterator<Tuple2<Integer, T>>() {
+          private int index;
+
+          @Override
+          public boolean hasNext() {
+            return iterator.hasNext();
+          }
+
+          @Override
+          public Tuple2<Integer, T> next() {
+            return Tuple2.of(index++, iterator.next());
+          }
+        };
+    return streamFromIterator(indexedIterator);
+  }
+
+  /**
+   * Takes values while the predicate holds, including the first failing element.
+   *
+   * @param stream source stream
+   * @param predicate predicate to test
+   * @param <T> element type
+   * @return stream that includes the first failing element
+   * @throws NullPointerException if {@code stream} or {@code predicate} is {@code null}
+   */
+  public static <T> @NonNull Stream<T> takeWhileInclusive(
+      @NonNull Stream<? extends @Nullable T> stream,
+      @NonNull Predicate<? super @Nullable T> predicate) {
+    Objects.requireNonNull(stream, "stream");
+    Objects.requireNonNull(predicate, "predicate");
+    final var iterator = stream.iterator();
+    final var inclusiveIterator =
+        new Iterator<T>() {
+          private boolean nextReady;
+          private boolean stopAfterNext;
+          private boolean finished;
+          private @Nullable T next;
+
+          private void prepare() {
+            if (nextReady || finished) {
+              return;
+            }
+            if (!iterator.hasNext()) {
+              finished = true;
+              return;
+            }
+            final var candidate = iterator.next();
+            next = candidate;
+            nextReady = true;
+            if (!predicate.test(candidate)) {
+              stopAfterNext = true;
+            }
+          }
+
+          @Override
+          public boolean hasNext() {
+            prepare();
+            return nextReady;
+          }
+
+          @Override
+          public T next() {
+            if (!hasNext()) {
+              throw new NoSuchElementException();
+            }
+            final var value = next;
+            nextReady = false;
+            if (stopAfterNext) {
+              finished = true;
+            }
+            return value;
+          }
+        };
+    return streamFromIterator(inclusiveIterator);
+  }
+
+  /**
+   * Drops values while the predicate holds, also dropping the first failing element.
+   *
+   * @param stream source stream
+   * @param predicate predicate to test
+   * @param <T> element type
+   * @return stream with the first failing element removed
+   * @throws NullPointerException if {@code stream} or {@code predicate} is {@code null}
+   */
+  public static <T> @NonNull Stream<T> dropWhileInclusive(
+      @NonNull Stream<? extends @Nullable T> stream,
+      @NonNull Predicate<? super @Nullable T> predicate) {
+    Objects.requireNonNull(stream, "stream");
+    Objects.requireNonNull(predicate, "predicate");
+    final var iterator = stream.iterator();
+    final var droppingIterator =
+        new Iterator<T>() {
+          private boolean dropped;
+          private boolean nextReady;
+          private @Nullable T next;
+
+          private void prepare() {
+            if (nextReady) {
+              return;
+            }
+            if (!dropped) {
+              while (iterator.hasNext()) {
+                final var candidate = iterator.next();
+                if (!predicate.test(candidate)) {
+                  dropped = true;
+                  break;
+                }
+              }
+              if (!dropped) {
+                return;
+              }
+            }
+            if (iterator.hasNext()) {
+              next = iterator.next();
+              nextReady = true;
+            }
+          }
+
+          @Override
+          public boolean hasNext() {
+            prepare();
+            return nextReady;
+          }
+
+          @Override
+          public T next() {
+            if (!hasNext()) {
+              throw new NoSuchElementException();
+            }
+            final var value = next;
+            nextReady = false;
+            return value;
+          }
+        };
+    return streamFromIterator(droppingIterator);
+  }
+
+  /**
+   * Filters distinct values by a key extractor.
+   *
+   * @param stream source stream
+   * @param keyExtractor key extractor
+   * @param <T> element type
+   * @param <K> key type
+   * @return stream with distinct keys
+   * @throws NullPointerException if {@code stream} or {@code keyExtractor} is {@code null}
+   */
+  public static <T, K> @NonNull Stream<T> distinctBy(
+      @NonNull Stream<@Nullable T> stream,
+      @NonNull Function<? super @Nullable T, ? extends @Nullable K> keyExtractor) {
+    Objects.requireNonNull(stream, "stream");
+    Objects.requireNonNull(keyExtractor, "keyExtractor");
+    final var seen = new HashSet<@Nullable K>();
+    return stream.sequential().filter(value -> seen.add(keyExtractor.apply(value)));
+  }
+
+  /**
+   * Maps values to {@link Try}, capturing exceptions from the mapper.
+   *
+   * @param stream source stream
+   * @param mapper mapper function
+   * @param <T> input type
+   * @param <R> output type
+   * @return stream of {@link Try}
+   * @throws NullPointerException if {@code stream} or {@code mapper} is {@code null}
+   */
+  public static <T, R> @NonNull Stream<Try<R>> mapCatching(
+      @NonNull Stream<? extends @Nullable T> stream,
+      @NonNull Function<? super @Nullable T, ? extends R> mapper) {
+    Objects.requireNonNull(stream, "stream");
+    Objects.requireNonNull(mapper, "mapper");
+    return stream.map(value -> Try.of(() -> mapper.apply(value)));
+  }
+
+  /**
+   * Filters values with a predicate, capturing exceptions into {@link Try}.
+   *
+   * <p>When the predicate returns {@code true}, the value is emitted as {@link Try.Success}. When
+   * the predicate returns {@code false}, the value is dropped. When the predicate throws, a {@link
+   * Try.Failure} is emitted.
+   *
+   * @param stream source stream
+   * @param predicate predicate to test
+   * @param <T> element type
+   * @return stream of {@link Try} for accepted values and failures
+   * @throws NullPointerException if {@code stream} or {@code predicate} is {@code null}
+   */
+  public static <T> @NonNull Stream<Try<T>> filterCatching(
+      @NonNull Stream<? extends @Nullable T> stream,
+      @NonNull Predicate<? super @Nullable T> predicate) {
+    Objects.requireNonNull(stream, "stream");
+    Objects.requireNonNull(predicate, "predicate");
+    return stream.flatMap(
+        value -> {
+          try {
+            if (predicate.test(value)) {
+              return Stream.of(Try.success(value));
+            }
+            return Stream.empty();
+          } catch (Exception exception) {
+            return Stream.of(Try.failure(exception));
+          }
+        });
+  }
+
+  private static <T> @NonNull Stream<T> streamFromIterator(@NonNull Iterator<T> iterator) {
+    final var spliterator = Spliterators.spliteratorUnknownSize(iterator, Spliterator.ORDERED);
+    return StreamSupport.stream(spliterator, false);
   }
 }
