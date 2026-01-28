@@ -226,11 +226,11 @@ public final class NonEmptyList<T> implements Iterable<@Nullable T> {
       @Nullable U initial,
       @NonNull BiFunction<? super @Nullable U, ? super @Nullable T, ? extends U> folder) {
     Objects.requireNonNull(folder, "folder");
-    return values.stream()
-        .reduce(
-            initial,
-            (acc, value) -> folder.apply(acc, value),
-            (left, right) -> right);
+    final var accumulator = new java.util.concurrent.atomic.AtomicReference<@Nullable U>(initial);
+    for (final var value : values) {
+      accumulator.set(folder.apply(accumulator.get(), value));
+    }
+    return accumulator.get();
   }
 
   @Override

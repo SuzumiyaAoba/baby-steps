@@ -27,6 +27,18 @@ class NonEmptyListTest {
   }
 
   @Test
+  void equals_withSameInstance_expectedTrue() {
+    // Arrange
+    final var sut = NonEmptyList.of("a");
+
+    // Act
+    final var result = sut.equals(sut);
+
+    // Assert
+    softly.assertThat(result).isTrue();
+  }
+
+  @Test
   void of_withTail_expectedOrder() {
     // Arrange
     // Act
@@ -46,6 +58,43 @@ class NonEmptyListTest {
 
     // Assert
     softly.assertThat(result.isPresent()).isFalse();
+  }
+
+  @Test
+  void privateConstructor_withEmptyList_expectedException() throws Exception {
+    // Arrange
+    final var constructor =
+        NonEmptyList.class.getDeclaredConstructor(List.class, boolean.class);
+    constructor.setAccessible(true);
+
+    // Act
+    final ThrowingCallable action = () -> constructor.newInstance(List.of(), true);
+
+    // Assert
+    softly
+        .assertThatThrownBy(action)
+        .hasCauseInstanceOf(IllegalArgumentException.class);
+  }
+
+  @Test
+  @SuppressWarnings("unchecked")
+  void privateConstructor_withAlreadyOwnedFalse_expectedCopiedUnmodifiable() throws Exception {
+    // Arrange
+    final var values = new ArrayList<String>();
+    values.add("a");
+    final var constructor =
+        NonEmptyList.class.getDeclaredConstructor(List.class, boolean.class);
+    constructor.setAccessible(true);
+
+    // Act
+    final var sut =
+        (NonEmptyList<String>) constructor.newInstance(values, false);
+    values.add("b");
+    final ThrowingCallable action = () -> sut.toList().add("c");
+
+    // Assert
+    softly.assertThat(sut.toList()).containsExactly("a");
+    softly.assertThatThrownBy(action).isInstanceOf(UnsupportedOperationException.class);
   }
 
   @Test
