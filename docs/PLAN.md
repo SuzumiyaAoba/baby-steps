@@ -52,8 +52,8 @@
   - [x] Happy-path value propagation
 
 ### 3) Tuples expansion (fp)
-- [x] Add `Tuple3`
-  - [x] `of`, `mapFirst`/`mapSecond`/`mapThird`, `bimap`/`trimap`
+- [x] Add `Tuple3`/`Tuple4`/`Tuple5`
+  - [x] `of`, `mapFirst...mapNth`, `bimap`/`trimap`/`quadmap`/`quintmap`
   - [x] Keep `swap` only for 2-element tuples; consider explicit `rotate` for 3
 - [x] Tests
   - [x] Mapping functions and construction APIs
