@@ -20,6 +20,9 @@ class Tuple3Test {
     softly.assertThat(result.first()).isEqualTo("first");
     softly.assertThat(result.second()).isEqualTo("second");
     softly.assertThat(result.third()).isEqualTo("third");
+    softly.assertThat(result._1()).isEqualTo("first");
+    softly.assertThat(result._2()).isEqualTo("second");
+    softly.assertThat(result._3()).isEqualTo("third");
   }
 
   @Test
