@@ -352,6 +352,15 @@ class FunctionsTest {
   }
 
   @Test
+  void resultOf_whenSuccess_expectedOk() {
+    // Act
+    final var result = Functions.resultOf(() -> "value", error -> "error");
+
+    // Assert
+    softly.assertThat(result).isEqualTo(Result.ok("value"));
+  }
+
+  @Test
   void resultFunction_whenSuccess_expectedOk() {
     // Arrange
     final var fn = Functions.resultFunction(String::length, error -> "error");
@@ -361,6 +370,25 @@ class FunctionsTest {
 
     // Assert
     softly.assertThat(result).isEqualTo(Result.ok(5));
+  }
+
+  @Test
+  void resultFunction_whenFailure_expectedErr() {
+    // Arrange
+    final var exception = new Exception("boom");
+    final var fn =
+        Functions.resultFunction(
+            value -> {
+              throw exception;
+            },
+            error -> error.getMessage());
+
+    // Act
+    final var result = fn.apply("value");
+
+    // Assert
+    softly.assertThat(result.isErr()).isTrue();
+    softly.assertThat(result.unwrapErr()).isEqualTo("boom");
   }
 
   @Test
@@ -380,5 +408,24 @@ class FunctionsTest {
     // Assert
     softly.assertThat(result.isErr()).isTrue();
     softly.assertThat(result.unwrapErr()).isEqualTo("boom");
+  }
+
+  @Test
+  void resultConsumer_whenSuccess_expectedOk() {
+    // Arrange
+    final var calls = new AtomicInteger(0);
+    final var fn =
+        Functions.resultConsumer(
+            value -> {
+              calls.incrementAndGet();
+            },
+            error -> "error");
+
+    // Act
+    final var result = fn.apply("value");
+
+    // Assert
+    softly.assertThat(calls.get()).isEqualTo(1);
+    softly.assertThat(result).isEqualTo(Result.ok(Unit.instance()));
   }
 }
