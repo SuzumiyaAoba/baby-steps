@@ -65,7 +65,7 @@
 - [ ] Interop with core/fp types (Option/Result/Validated)
 
 ### Stream helpers
-- [ ] Safe terminals (`first/last/single`)
+- [x] Safe terminals (`first/last/single`)
 - [ ] Lazy/chunk helpers (`chunked`, `windowed`, etc.)
 - [ ] Exception handling with `Try/Result`
 
