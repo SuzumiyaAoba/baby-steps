@@ -63,17 +63,14 @@ class NonEmptyListTest {
   @Test
   void privateConstructor_withEmptyList_expectedException() throws Exception {
     // Arrange
-    final var constructor =
-        NonEmptyList.class.getDeclaredConstructor(List.class, boolean.class);
+    final var constructor = NonEmptyList.class.getDeclaredConstructor(List.class, boolean.class);
     constructor.setAccessible(true);
 
     // Act
     final ThrowingCallable action = () -> constructor.newInstance(List.of(), true);
 
     // Assert
-    softly
-        .assertThatThrownBy(action)
-        .hasCauseInstanceOf(IllegalArgumentException.class);
+    softly.assertThatThrownBy(action).hasCauseInstanceOf(IllegalArgumentException.class);
   }
 
   @Test
@@ -82,13 +79,11 @@ class NonEmptyListTest {
     // Arrange
     final var values = new ArrayList<String>();
     values.add("a");
-    final var constructor =
-        NonEmptyList.class.getDeclaredConstructor(List.class, boolean.class);
+    final var constructor = NonEmptyList.class.getDeclaredConstructor(List.class, boolean.class);
     constructor.setAccessible(true);
 
     // Act
-    final var sut =
-        (NonEmptyList<String>) constructor.newInstance(values, false);
+    final var sut = (NonEmptyList<String>) constructor.newInstance(values, false);
     values.add("b");
     final ThrowingCallable action = () -> sut.toList().add("c");
 

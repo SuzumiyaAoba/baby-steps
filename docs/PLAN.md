@@ -13,6 +13,7 @@
 - [x] Try (exception capture model, Result/Option bridges, tests)
 - [x] Unit (void substitute, tests)
 - [x] Validated (error accumulation, combine/zip/bridge, tests)
+- [x] NonEmptyList (factories/ops/Validated integration, tests)
 
 ### fp
 - [x] Functions (compose/pipe/curry/partial/memoize/tupled, tests)
@@ -22,33 +23,33 @@
 
 ## Near-Term Plan (core + fp)
 ### 1) core: NonEmptyList
-- [ ] API design
-  - [ ] Factories: `of(...)`, `fromList(...)`, `fromIterable(...)`
-  - [ ] Base API: `head`, `tail`, `size`, `iterator`
-  - [ ] Immutability policy (defensive copy + `toList()` unmodifiable)
-- [ ] Transformations / operations
-  - [ ] `append` / `prepend` / `concat`
-  - [ ] `map` / `flatMap` / `fold`
-  - [ ] `toList`, `toArray` (if needed)
-- [ ] Validated integration
-  - [ ] Convenience API: `Validated.errs(NonEmptyList<E>)` (or bridge via `toList()`)
-  - [ ] Helper to accumulate multiple `Validated` into `NonEmptyList`
-- [ ] Tests
-  - [ ] Factories/ops/transformations/exception paths
-  - [ ] equals/hashCode/toString behavior
+- [x] API design
+  - [x] Factories: `of(...)`, `fromList(...)`, `fromIterable(...)`
+  - [x] Base API: `head`, `tail`, `size`, `iterator`
+  - [x] Immutability policy (defensive copy + `toList()` unmodifiable)
+- [x] Transformations / operations
+  - [x] `append` / `prepend` / `concat`
+  - [x] `map` / `flatMap` / `fold`
+  - [x] `toList`, `toArray` (if needed)
+- [x] Validated integration
+  - [x] Convenience API: `Validated.errs(NonEmptyList<E>)` (or bridge via `toList()`)
+  - [x] Helper to accumulate multiple `Validated` into `NonEmptyList`
+- [x] Tests
+  - [x] Factories/ops/transformations/exception paths
+  - [x] equals/hashCode/toString behavior
 
-### 2) fp: Checked functional interfaces
-- [ ] New interfaces
-  - [ ] `CheckedSupplier<T>`
-  - [ ] `CheckedFunction<T, R>`
-  - [ ] `CheckedConsumer<T>`
-- [ ] Lift/bridge helpers
-  - [ ] Lift into `Try` (e.g., `Try.of(checked)`)
-  - [ ] Lift into `Result` (e.g., `Result.of(checked, errorMapper)`)
-  - [ ] Decide whether to add to `Functions` or introduce a new utility
-- [ ] Tests
-  - [ ] Exceptions are captured into `Try/Result`
-  - [ ] Happy-path value propagation
+### 2) core: Checked functional interfaces
+- [x] New interfaces
+  - [x] `CheckedSupplier<T>`
+  - [x] `CheckedFunction<T, R>`
+  - [x] `CheckedConsumer<T>`
+- [x] Result helpers
+  - [x] `Result.of(CheckedSupplier, errorMapper)`
+  - [x] `Result.from(CheckedFunction, errorMapper)`
+  - [x] `Result.fromConsumer(CheckedConsumer, errorMapper)`
+- [x] Tests
+  - [x] Exceptions are captured into `Result`
+  - [x] Happy-path value propagation
 
 ### 3) Tuples expansion (fp)
 - [ ] Add `Tuple3`

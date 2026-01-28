@@ -56,8 +56,7 @@ public sealed interface Validated<T, E> permits Validated.Ok, Validated.Err {
    * @return an {@code Err} validation containing the given errors
    * @throws NullPointerException if {@code errors} is {@code null}
    */
-  static <T, E> @NonNull Validated<T, E> errs(
-      @NonNull NonEmptyList<? extends @Nullable E> errors) {
+  static <T, E> @NonNull Validated<T, E> errs(@NonNull NonEmptyList<? extends @Nullable E> errors) {
     Objects.requireNonNull(errors, "errors");
     @SuppressWarnings("unchecked")
     final var list = (List<@Nullable E>) errors.toList();
@@ -140,8 +139,8 @@ public sealed interface Validated<T, E> permits Validated.Ok, Validated.Err {
    * @param <T> success value type
    * @param <E> error value type
    * @return {@code Ok} for present optional, otherwise {@code Err} with a single error
-   * @throws NullPointerException if {@code optional}, {@code ifEmpty}, or its result is
-   *     {@code null}
+   * @throws NullPointerException if {@code optional}, {@code ifEmpty}, or its result is {@code
+   *     null}
    */
   static <T, E> @NonNull Validated<T, E> fromOptional(
       @NonNull Optional<? extends T> optional, @NonNull Supplier<? extends E> ifEmpty) {

@@ -330,13 +330,4 @@ public sealed interface Try<T> permits Try.Success, Try.Failure {
     }
   }
 
-  /**
-   * Supplier that allows checked exceptions.
-   *
-   * @param <T> supplied value type
-   */
-  @FunctionalInterface
-  interface CheckedSupplier<T> {
-    T get() throws Exception;
-  }
 }

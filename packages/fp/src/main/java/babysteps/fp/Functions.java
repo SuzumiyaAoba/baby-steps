@@ -190,4 +190,5 @@ public final class Functions {
       return result == NULL_VALUE ? null : result;
     };
   }
+
 }

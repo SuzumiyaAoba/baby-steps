@@ -260,4 +260,5 @@ class FunctionsTest {
     softly.assertThat(result).isEqualTo("ac");
     softly.assertThat(calls.get()).isEqualTo(2);
   }
+
 }
