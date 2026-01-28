@@ -104,6 +104,18 @@ class ValidatedTest {
   }
 
   @Test
+  void errs_withNonEmptyList_expectedErrors() {
+    // Arrange
+    final var errors = NonEmptyList.of("first", "second");
+
+    // Act
+    final var sut = Validated.errs(errors);
+
+    // Assert
+    softly.assertThat(sut.unwrapErrs()).containsExactly("first", "second");
+  }
+
+  @Test
   void unwrapErrs_withOk_expectedException() {
     // Arrange
     final var sut = Validated.ok("value");

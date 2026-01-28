@@ -50,6 +50,21 @@ public sealed interface Validated<T, E> permits Validated.Ok, Validated.Err {
   }
 
   /**
+   * Creates an {@code Err} validation with the given non-empty errors.
+   *
+   * @param errors non-empty error list
+   * @return an {@code Err} validation containing the given errors
+   * @throws NullPointerException if {@code errors} is {@code null}
+   */
+  static <T, E> @NonNull Validated<T, E> errs(
+      @NonNull NonEmptyList<? extends @Nullable E> errors) {
+    Objects.requireNonNull(errors, "errors");
+    @SuppressWarnings("unchecked")
+    final var list = (List<@Nullable E>) errors.toList();
+    return errList(list);
+  }
+
+  /**
    * Creates an {@code Err} validation with the given errors.
    *
    * @param errors errors to store
