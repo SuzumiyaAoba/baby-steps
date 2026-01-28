@@ -3,12 +3,12 @@ name: java
 description: Use this to write Java.
 ---
 
-## Java
+# Java
 
-### Coding Style
+## Coding Style
 
 See references/coding-style.md for details.
 
-### Unit Testing
+## Unit Testing
 
 See references/unit-testing.md for details.
