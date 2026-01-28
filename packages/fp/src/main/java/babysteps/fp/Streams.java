@@ -8,10 +8,10 @@ import java.util.Collections;
 import java.util.HashSet;
 import java.util.Iterator;
 import java.util.List;
-import java.util.NoSuchElementException;
 import java.util.Objects;
 import java.util.Spliterator;
 import java.util.Spliterators;
+import java.util.function.Consumer;
 import java.util.function.Function;
 import java.util.function.Predicate;
 import java.util.stream.Stream;
@@ -113,9 +113,6 @@ public final class Streams {
 
           @Override
           public List<T> next() {
-            if (!iterator.hasNext()) {
-              throw new NoSuchElementException();
-            }
             final var values = new ArrayList<T>(size);
             while (iterator.hasNext() && values.size() < size) {
               values.add(iterator.next());
@@ -207,9 +204,6 @@ public final class Streams {
 
           @Override
           public List<T> next() {
-            if (!hasNext()) {
-              throw new NoSuchElementException();
-            }
             final var window = Collections.unmodifiableList(new ArrayList<>(buffer));
             var toDrop = step;
             while (toDrop > 0 && !buffer.isEmpty()) {
@@ -267,49 +261,29 @@ public final class Streams {
     Objects.requireNonNull(stream, "stream");
     Objects.requireNonNull(predicate, "predicate");
     final var iterator = stream.iterator();
-    final var inclusiveIterator =
-        new Iterator<T>() {
-          private boolean nextReady;
-          private boolean stopAfterNext;
-          private boolean finished;
-          private @Nullable T next;
+    final var spliterator =
+        new Spliterators.AbstractSpliterator<T>(Long.MAX_VALUE, Spliterator.ORDERED) {
+          private boolean stopped;
 
-          private void prepare() {
-            if (nextReady || finished) {
-              return;
+          @Override
+          public boolean tryAdvance(Consumer<? super T> action) {
+            Objects.requireNonNull(action, "action");
+            if (stopped) {
+              return false;
             }
             if (!iterator.hasNext()) {
-              finished = true;
-              return;
+              stopped = true;
+              return false;
             }
-            final var candidate = iterator.next();
-            next = candidate;
-            nextReady = true;
-            if (!predicate.test(candidate)) {
-              stopAfterNext = true;
+            final var value = iterator.next();
+            action.accept(value);
+            if (!predicate.test(value)) {
+              stopped = true;
             }
-          }
-
-          @Override
-          public boolean hasNext() {
-            prepare();
-            return nextReady;
-          }
-
-          @Override
-          public T next() {
-            if (!hasNext()) {
-              throw new NoSuchElementException();
-            }
-            final var value = next;
-            nextReady = false;
-            if (stopAfterNext) {
-              finished = true;
-            }
-            return value;
+            return true;
           }
         };
-    return streamFromIterator(inclusiveIterator);
+    return StreamSupport.stream(spliterator, false);
   }
 
   /**
@@ -322,56 +296,11 @@ public final class Streams {
    * @throws NullPointerException if {@code stream} or {@code predicate} is {@code null}
    */
   public static <T> @NonNull Stream<T> dropWhileInclusive(
-      @NonNull Stream<? extends @Nullable T> stream,
+      @NonNull Stream<@Nullable T> stream,
       @NonNull Predicate<? super @Nullable T> predicate) {
     Objects.requireNonNull(stream, "stream");
     Objects.requireNonNull(predicate, "predicate");
-    final var iterator = stream.iterator();
-    final var droppingIterator =
-        new Iterator<T>() {
-          private boolean dropped;
-          private boolean nextReady;
-          private @Nullable T next;
-
-          private void prepare() {
-            if (nextReady) {
-              return;
-            }
-            if (!dropped) {
-              while (iterator.hasNext()) {
-                final var candidate = iterator.next();
-                if (!predicate.test(candidate)) {
-                  dropped = true;
-                  break;
-                }
-              }
-              if (!dropped) {
-                return;
-              }
-            }
-            if (iterator.hasNext()) {
-              next = iterator.next();
-              nextReady = true;
-            }
-          }
-
-          @Override
-          public boolean hasNext() {
-            prepare();
-            return nextReady;
-          }
-
-          @Override
-          public T next() {
-            if (!hasNext()) {
-              throw new NoSuchElementException();
-            }
-            final var value = next;
-            nextReady = false;
-            return value;
-          }
-        };
-    return streamFromIterator(droppingIterator);
+    return stream.dropWhile(predicate).skip(1);
   }
 
   /**

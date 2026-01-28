@@ -5,6 +5,7 @@ import babysteps.core.Try;
 import java.util.List;
 import java.util.stream.Stream;
 import org.assertj.core.api.SoftAssertions;
+import org.assertj.core.api.ThrowableAssert.ThrowingCallable;
 import org.assertj.core.api.junit.jupiter.InjectSoftAssertions;
 import org.assertj.core.api.junit.jupiter.SoftAssertionsExtension;
 import org.junit.jupiter.api.Test;
@@ -106,6 +107,29 @@ class StreamsTest {
   }
 
   @Test
+  void chunked_withInvalidSize_expectedException() {
+    // Arrange
+    // Act
+    final var action = (ThrowingCallable) () -> Streams.chunked(Stream.of(1), 0).toList();
+
+    // Assert
+    softly.assertThatThrownBy(action).isInstanceOf(IllegalArgumentException.class);
+  }
+
+  @Test
+  void chunked_iteratorNextWithoutElements_expectedException() {
+    // Arrange
+    final var iterator = Streams.chunked(Stream.of(1), 1).iterator();
+    iterator.next();
+
+    // Act
+    final var action = (ThrowingCallable) iterator::next;
+
+    // Assert
+    softly.assertThatThrownBy(action).isInstanceOf(java.util.NoSuchElementException.class);
+  }
+
+  @Test
   void windowed_withStep_expectedWindows() {
     // Arrange
     // Act
@@ -116,6 +140,26 @@ class StreamsTest {
   }
 
   @Test
+  void windowed_withDefaultStep_expectedWindows() {
+    // Arrange
+    // Act
+    final var result = Streams.windowed(Stream.of(1, 2, 3), 2).toList();
+
+    // Assert
+    softly.assertThat(result).containsExactly(List.of(1, 2), List.of(2, 3));
+  }
+
+  @Test
+  void windowed_withTooLargeSize_expectedEmpty() {
+    // Arrange
+    // Act
+    final var result = Streams.windowed(Stream.of(1, 2), 3).toList();
+
+    // Assert
+    softly.assertThat(result).isEmpty();
+  }
+
+  @Test
   void windowed_withPartial_expectedPartialWindow() {
     // Arrange
     // Act
@@ -123,6 +167,40 @@ class StreamsTest {
 
     // Assert
     softly.assertThat(result).containsExactly(List.of(1, 2), List.of(3));
+  }
+
+  @Test
+  void windowed_withInvalidSize_expectedException() {
+    // Arrange
+    // Act
+    final var action = (ThrowingCallable) ()
+        -> Streams.windowed(Stream.of(1), 0, 1, false).toList();
+
+    // Assert
+    softly.assertThatThrownBy(action).isInstanceOf(IllegalArgumentException.class);
+  }
+
+  @Test
+  void windowed_withInvalidStep_expectedException() {
+    // Arrange
+    // Act
+    final var action = (ThrowingCallable) ()
+        -> Streams.windowed(Stream.of(1), 1, 0, false).toList();
+
+    // Assert
+    softly.assertThatThrownBy(action).isInstanceOf(IllegalArgumentException.class);
+  }
+
+  @Test
+  void windowed_iteratorNextWithoutElements_expectedException() {
+    // Arrange
+    final var iterator = Streams.windowed(Stream.of(1), 2).iterator();
+
+    // Act
+    final var action = (ThrowingCallable) iterator::next;
+
+    // Assert
+    softly.assertThatThrownBy(action).isInstanceOf(java.util.NoSuchElementException.class);
   }
 
   @Test
@@ -147,6 +225,30 @@ class StreamsTest {
   }
 
   @Test
+  void takeWhileInclusive_withEmptyStream_expectedEmpty() {
+    // Arrange
+    // Act
+    final var result =
+        Streams.takeWhileInclusive(Stream.<Integer>empty(), value -> value < 3).toList();
+
+    // Assert
+    softly.assertThat(result).isEmpty();
+  }
+
+  @Test
+  void takeWhileInclusive_iteratorNextWithoutElements_expectedException() {
+    // Arrange
+    final var iterator = Streams.takeWhileInclusive(Stream.of(1), value -> value < 0).iterator();
+    iterator.next();
+
+    // Act
+    final var action = (ThrowingCallable) iterator::next;
+
+    // Assert
+    softly.assertThatThrownBy(action).isInstanceOf(java.util.NoSuchElementException.class);
+  }
+
+  @Test
   void dropWhileInclusive_expectedDropFirstFailure() {
     // Arrange
     // Act
@@ -155,6 +257,16 @@ class StreamsTest {
 
     // Assert
     softly.assertThat(result).containsExactly(4);
+  }
+
+  @Test
+  void dropWhileInclusive_withAllMatching_expectedEmpty() {
+    // Arrange
+    // Act
+    final var result = Streams.dropWhileInclusive(Stream.of(1, 2), value -> value < 3).toList();
+
+    // Assert
+    softly.assertThat(result).isEmpty();
   }
 
   @Test
