@@ -2,6 +2,7 @@ package babysteps.core;
 
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.Collections;
 import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
@@ -809,7 +810,9 @@ public sealed interface Result<T, E> permits Result.Ok, Result.Err {
         errs.add(result.unwrapErr());
       }
     }
-    return new Partition<>(List.copyOf(oks), List.copyOf(errs));
+    return new Partition<>(
+        Collections.unmodifiableList(new ArrayList<>(oks)),
+        Collections.unmodifiableList(new ArrayList<>(errs)));
   }
 
   /**
@@ -832,7 +835,7 @@ public sealed interface Result<T, E> permits Result.Ok, Result.Err {
       }
       values.add(result.unwrap());
     }
-    return ok(List.copyOf(values));
+    return ok(Collections.unmodifiableList(new ArrayList<>(values)));
   }
 
   /**
@@ -860,7 +863,7 @@ public sealed interface Result<T, E> permits Result.Ok, Result.Err {
       }
       results.add(result.unwrap());
     }
-    return ok(List.copyOf(results));
+    return ok(Collections.unmodifiableList(new ArrayList<>(results)));
   }
 
   /**

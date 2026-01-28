@@ -4,6 +4,7 @@ import babysteps.core.Option;
 import babysteps.core.Try;
 import java.util.ArrayDeque;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.HashSet;
 import java.util.Iterator;
 import java.util.List;
@@ -119,7 +120,7 @@ public final class Streams {
             while (iterator.hasNext() && values.size() < size) {
               values.add(iterator.next());
             }
-            return List.copyOf(values);
+            return Collections.unmodifiableList(values);
           }
         };
     return streamFromIterator(chunkIterator);
@@ -209,7 +210,7 @@ public final class Streams {
             if (!hasNext()) {
               throw new NoSuchElementException();
             }
-            final var window = List.copyOf(buffer);
+            final var window = Collections.unmodifiableList(new ArrayList<>(buffer));
             var toDrop = step;
             while (toDrop > 0 && !buffer.isEmpty()) {
               buffer.removeFirst();
