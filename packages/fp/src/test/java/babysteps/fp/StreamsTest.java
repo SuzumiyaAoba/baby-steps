@@ -3,6 +3,7 @@ package babysteps.fp;
 import babysteps.core.Option;
 import babysteps.core.Try;
 import java.util.List;
+import java.util.NoSuchElementException;
 import java.util.stream.Stream;
 import org.assertj.core.api.SoftAssertions;
 import org.assertj.core.api.ThrowableAssert.ThrowingCallable;
@@ -167,6 +168,40 @@ class StreamsTest {
 
     // Assert
     softly.assertThat(result).containsExactly(List.of(1, 2), List.of(3));
+  }
+
+  @Test
+  void windowed_nextCalledWithoutHasNext_expectedWindow() {
+    // Arrange
+    final var iterator = Streams.windowed(Stream.of(1, 2, 3), 2).iterator();
+
+    // Act
+    final var result = iterator.next();
+
+    // Assert
+    softly.assertThat(result).containsExactly(1, 2);
+  }
+
+  @Test
+  void windowed_withStepGreaterThanSize_expectedSkipUnderlying() {
+    // Arrange
+    // Act
+    final var result = Streams.windowed(Stream.of(1, 2, 3, 4, 5, 6), 2, 3).toList();
+
+    // Assert
+    softly.assertThat(result).containsExactly(List.of(1, 2), List.of(4, 5));
+  }
+
+  @Test
+  void windowed_nextWithoutElements_expectedException() {
+    // Arrange
+    final var iterator = Streams.windowed(Stream.<Integer>empty(), 2).iterator();
+
+    // Act
+    final var action = (ThrowingCallable) iterator::next;
+
+    // Assert
+    softly.assertThatThrownBy(action).isInstanceOf(NoSuchElementException.class);
   }
 
   @Test
