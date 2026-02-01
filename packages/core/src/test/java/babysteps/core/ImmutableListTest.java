@@ -298,6 +298,66 @@ class ImmutableListTest {
   }
 
   @Test
+  void contains_withMissingValue_expectedFalse() {
+    // Arrange
+    final var sut = ImmutableList.of("a", "b");
+
+    // Act
+    final var result = sut.contains("c");
+
+    // Assert
+    softly.assertThat(result).isFalse();
+  }
+
+  @Test
+  void indexOf_withValue_expectedIndex() {
+    // Arrange
+    final var sut = ImmutableList.of("a", "b");
+
+    // Act
+    final var result = sut.indexOf("b");
+
+    // Assert
+    softly.assertThat(result).isEqualTo(1);
+  }
+
+  @Test
+  void lastIndexOf_withMissingValue_expectedMinusOne() {
+    // Arrange
+    final var sut = ImmutableList.of("a", "b");
+
+    // Act
+    final var result = sut.lastIndexOf("c");
+
+    // Assert
+    softly.assertThat(result).isEqualTo(-1);
+  }
+
+  @Test
+  void getOption_withNegativeIndex_expectedNone() {
+    // Arrange
+    final var sut = ImmutableList.of("a");
+
+    // Act
+    final var result = sut.getOption(-1);
+
+    // Assert
+    softly.assertThat(result.isPresent()).isFalse();
+  }
+
+  @Test
+  void getOrElse_withNegativeIndex_expectedFallback() {
+    // Arrange
+    final var sut = ImmutableList.of("a");
+
+    // Act
+    final var result = sut.getOrElse(-1, "fallback");
+
+    // Assert
+    softly.assertThat(result).isEqualTo("fallback");
+  }
+
+  @Test
   void toList_expectedUnmodifiable() {
     // Arrange
     final var sut = ImmutableList.of("a");
@@ -380,6 +440,18 @@ class ImmutableListTest {
 
     // Assert
     softly.assertThatThrownBy(action).isInstanceOf(NullPointerException.class);
+  }
+
+  @Test
+  void toArray_withEmpty_expectedEmptyArray() {
+    // Arrange
+    final var sut = ImmutableList.<String>empty();
+
+    // Act
+    final var result = sut.toArray(String[]::new);
+
+    // Assert
+    softly.assertThat(result).isEmpty();
   }
 
   @Test
@@ -517,6 +589,18 @@ class ImmutableListTest {
   }
 
   @Test
+  void filter_withEmpty_expectedEmpty() {
+    // Arrange
+    final var sut = ImmutableList.<String>empty();
+
+    // Act
+    final var result = sut.filter(value -> value.length() > 0);
+
+    // Assert
+    softly.assertThat(result.isEmpty()).isTrue();
+  }
+
+  @Test
   void flatMap_withMapper_expectedFlattenedList() {
     // Arrange
     final var sut = ImmutableList.of("a", "bb");
@@ -589,6 +673,30 @@ class ImmutableListTest {
   }
 
   @Test
+  void take_withNegative_expectedEmpty() {
+    // Arrange
+    final var sut = ImmutableList.of("a");
+
+    // Act
+    final var result = sut.take(-1);
+
+    // Assert
+    softly.assertThat(result.isEmpty()).isTrue();
+  }
+
+  @Test
+  void take_withCountEqualSize_expectedSameInstance() {
+    // Arrange
+    final var sut = ImmutableList.of("a", "b");
+
+    // Act
+    final var result = sut.take(2);
+
+    // Assert
+    softly.assertThat(result).isSameAs(sut);
+  }
+
+  @Test
   void drop_withCount_expectedSuffix() {
     // Arrange
     final var sut = ImmutableList.of("a", "b", "c");
@@ -613,6 +721,30 @@ class ImmutableListTest {
   }
 
   @Test
+  void drop_withZero_expectedSameInstance() {
+    // Arrange
+    final var sut = ImmutableList.of("a");
+
+    // Act
+    final var result = sut.drop(0);
+
+    // Assert
+    softly.assertThat(result).isSameAs(sut);
+  }
+
+  @Test
+  void drop_withNegative_expectedSameInstance() {
+    // Arrange
+    final var sut = ImmutableList.of("a");
+
+    // Act
+    final var result = sut.drop(-1);
+
+    // Assert
+    softly.assertThat(result).isSameAs(sut);
+  }
+
+  @Test
   void takeWhile_withPredicate_expectedPrefix() {
     // Arrange
     final var sut = ImmutableList.of("a", "bb", "ccc");
@@ -622,6 +754,30 @@ class ImmutableListTest {
 
     // Assert
     softly.assertThat(result.toList()).containsExactly("a", "bb");
+  }
+
+  @Test
+  void takeWhile_withAllMatching_expectedSameInstance() {
+    // Arrange
+    final var sut = ImmutableList.of("a", "bb");
+
+    // Act
+    final var result = sut.takeWhile(value -> value.length() <= 2);
+
+    // Assert
+    softly.assertThat(result).isSameAs(sut);
+  }
+
+  @Test
+  void takeWhile_withNoneMatching_expectedEmpty() {
+    // Arrange
+    final var sut = ImmutableList.of("a", "bb");
+
+    // Act
+    final var result = sut.takeWhile(value -> value.length() > 2);
+
+    // Assert
+    softly.assertThat(result.isEmpty()).isTrue();
   }
 
   @Test
@@ -661,6 +817,42 @@ class ImmutableListTest {
   }
 
   @Test
+  void dropWhile_withNoneMatching_expectedSameInstance() {
+    // Arrange
+    final var sut = ImmutableList.of("a", "bb");
+
+    // Act
+    final var result = sut.dropWhile(value -> value.length() > 2);
+
+    // Assert
+    softly.assertThat(result).isSameAs(sut);
+  }
+
+  @Test
+  void dropWhile_withAllMatching_expectedEmpty() {
+    // Arrange
+    final var sut = ImmutableList.of("a", "bb");
+
+    // Act
+    final var result = sut.dropWhile(value -> value.length() <= 2);
+
+    // Assert
+    softly.assertThat(result.isEmpty()).isTrue();
+  }
+
+  @Test
+  void dropWhile_withEmpty_expectedEmpty() {
+    // Arrange
+    final var sut = ImmutableList.<String>empty();
+
+    // Act
+    final var result = sut.dropWhile(value -> value.length() > 0);
+
+    // Assert
+    softly.assertThat(result.isEmpty()).isTrue();
+  }
+
+  @Test
   void distinct_withDuplicates_expectedDistinctList() {
     // Arrange
     final var sut = ImmutableList.of("a", "b", "a");
@@ -673,6 +865,30 @@ class ImmutableListTest {
   }
 
   @Test
+  void distinct_withNoDuplicates_expectedSameInstance() {
+    // Arrange
+    final var sut = ImmutableList.of("a", "b");
+
+    // Act
+    final var result = sut.distinct();
+
+    // Assert
+    softly.assertThat(result).isSameAs(sut);
+  }
+
+  @Test
+  void distinct_withEmpty_expectedEmpty() {
+    // Arrange
+    final var sut = ImmutableList.<String>empty();
+
+    // Act
+    final var result = sut.distinct();
+
+    // Assert
+    softly.assertThat(result.isEmpty()).isTrue();
+  }
+
+  @Test
   void reverse_withValues_expectedReversedList() {
     // Arrange
     final var sut = ImmutableList.of("a", "b", "c");
@@ -682,6 +898,18 @@ class ImmutableListTest {
 
     // Assert
     softly.assertThat(result.toList()).containsExactly("c", "b", "a");
+  }
+
+  @Test
+  void reverse_withSingle_expectedSameInstance() {
+    // Arrange
+    final var sut = ImmutableList.of("a");
+
+    // Act
+    final var result = sut.reverse();
+
+    // Assert
+    softly.assertThat(result).isSameAs(sut);
   }
 
   @Test
@@ -706,6 +934,18 @@ class ImmutableListTest {
 
     // Assert
     softly.assertThatThrownBy(action).isInstanceOf(NullPointerException.class);
+  }
+
+  @Test
+  void sorted_withSingle_expectedSameInstance() {
+    // Arrange
+    final var sut = ImmutableList.of("a");
+
+    // Act
+    final var result = sut.sorted(String::compareTo);
+
+    // Assert
+    softly.assertThat(result).isSameAs(sut);
   }
 
   @Test
