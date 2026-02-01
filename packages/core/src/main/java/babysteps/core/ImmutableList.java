@@ -92,13 +92,12 @@ public final class ImmutableList<T> implements Iterable<@Nullable T> {
   public static <T> @NonNull ImmutableList<T> fromIterable(
       @NonNull Iterable<? extends @Nullable T> values) {
     Objects.requireNonNull(values, "values");
-    final var iterator = values.iterator();
-    if (!iterator.hasNext()) {
-      return empty();
-    }
     final var list = new ArrayList<@Nullable T>();
-    while (iterator.hasNext()) {
-      list.add(iterator.next());
+    for (final var value : values) {
+      list.add(value);
+    }
+    if (list.isEmpty()) {
+      return empty();
     }
     return new ImmutableList<>(list, true);
   }
