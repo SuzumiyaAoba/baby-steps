@@ -512,7 +512,7 @@ public final class ImmutableList<T> implements Iterable<@Nullable T> {
    * @throws NullPointerException if {@code comparator} is {@code null}
    */
   public @NonNull ImmutableList<T> sorted(
-      @NonNull java.util.Comparator<? super @Nullable T> comparator) {
+      java.util.@NonNull Comparator<? super @Nullable T> comparator) {
     Objects.requireNonNull(comparator, "comparator");
     if (values.size() <= 1) {
       return this;
