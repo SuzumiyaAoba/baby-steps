@@ -8,6 +8,9 @@ import java.util.List;
 import java.util.Objects;
 import java.util.function.BiFunction;
 import java.util.function.Function;
+import java.util.function.IntFunction;
+import java.util.function.Predicate;
+import java.util.stream.Stream;
 import org.jspecify.annotations.NonNull;
 import org.jspecify.annotations.Nullable;
 
@@ -119,6 +122,36 @@ public final class ImmutableList<T> implements Iterable<@Nullable T> {
   }
 
   /**
+   * Returns true if the list contains the provided value.
+   *
+   * @param value value to look for
+   * @return true if the value is present
+   */
+  public boolean contains(@Nullable T value) {
+    return values.contains(value);
+  }
+
+  /**
+   * Returns the index of the first occurrence of the value.
+   *
+   * @param value value to look for
+   * @return index or {@code -1} when absent
+   */
+  public int indexOf(@Nullable T value) {
+    return values.indexOf(value);
+  }
+
+  /**
+   * Returns the index of the last occurrence of the value.
+   *
+   * @param value value to look for
+   * @return index or {@code -1} when absent
+   */
+  public int lastIndexOf(@Nullable T value) {
+    return values.lastIndexOf(value);
+  }
+
+  /**
    * Returns the first element as an {@link Option}.
    *
    * @return {@link Option#some(Object)} when non-empty, otherwise {@link Option#none()}
@@ -128,6 +161,45 @@ public final class ImmutableList<T> implements Iterable<@Nullable T> {
       return Option.none();
     }
     return Option.some(values.get(0));
+  }
+
+  /**
+   * Returns the last element as an {@link Option}.
+   *
+   * @return {@link Option#some(Object)} when non-empty, otherwise {@link Option#none()}
+   */
+  public @NonNull Option<T> lastOption() {
+    if (values.isEmpty()) {
+      return Option.none();
+    }
+    return Option.some(values.get(values.size() - 1));
+  }
+
+  /**
+   * Returns the element at the given index as an {@link Option}.
+   *
+   * @param index index to read
+   * @return {@link Option#some(Object)} when the index is valid, otherwise {@link Option#none()}
+   */
+  public @NonNull Option<T> getOption(int index) {
+    if (index < 0 || index >= values.size()) {
+      return Option.none();
+    }
+    return Option.some(values.get(index));
+  }
+
+  /**
+   * Returns the element at the given index or a fallback when out of range.
+   *
+   * @param index index to read
+   * @param fallback fallback value to use when out of bounds
+   * @return element at index or fallback
+   */
+  public @Nullable T getOrElse(int index, @Nullable T fallback) {
+    if (index < 0 || index >= values.size()) {
+      return fallback;
+    }
+    return values.get(index);
   }
 
   /**
@@ -158,6 +230,37 @@ public final class ImmutableList<T> implements Iterable<@Nullable T> {
    */
   public @NonNull Option<NonEmptyList<T>> toNonEmptyList() {
     return NonEmptyList.fromList(values);
+  }
+
+  /**
+   * Returns a sequential {@link Stream} over the elements.
+   *
+   * @return stream of elements
+   */
+  public @NonNull Stream<@Nullable T> stream() {
+    return values.stream();
+  }
+
+  /**
+   * Returns the list as a new array.
+   *
+   * @return array containing the list elements
+   */
+  public @NonNull Object[] toArray() {
+    return values.toArray();
+  }
+
+  /**
+   * Returns the list as a new typed array.
+   *
+   * @param generator array generator
+   * @param <U> array element type
+   * @return array containing the list elements
+   * @throws NullPointerException if {@code generator} is {@code null}
+   */
+  public <U> @NonNull U[] toArray(@NonNull IntFunction<U[]> generator) {
+    Objects.requireNonNull(generator, "generator");
+    return values.toArray(generator);
   }
 
   /**
@@ -207,6 +310,31 @@ public final class ImmutableList<T> implements Iterable<@Nullable T> {
   }
 
   /**
+   * Filters elements using the provided predicate.
+   *
+   * @param predicate filter predicate
+   * @return immutable list of elements that match the predicate
+   * @throws NullPointerException if {@code predicate} is {@code null}
+   */
+  public @NonNull ImmutableList<T> filter(
+      @NonNull Predicate<? super @Nullable T> predicate) {
+    Objects.requireNonNull(predicate, "predicate");
+    if (values.isEmpty()) {
+      return empty();
+    }
+    final var list = new ArrayList<@Nullable T>();
+    for (final var value : values) {
+      if (predicate.test(value)) {
+        list.add(value);
+      }
+    }
+    if (list.isEmpty()) {
+      return empty();
+    }
+    return new ImmutableList<>(list, true);
+  }
+
+  /**
    * Maps each element to another value.
    *
    * @param mapper mapper to apply
@@ -249,6 +377,148 @@ public final class ImmutableList<T> implements Iterable<@Nullable T> {
         list.add(inner);
       }
     }
+    return new ImmutableList<>(list, true);
+  }
+
+  /**
+   * Returns a list containing the first {@code count} elements.
+   *
+   * @param count number of elements to take
+   * @return immutable list with up to {@code count} elements
+   */
+  public @NonNull ImmutableList<T> take(int count) {
+    if (count <= 0) {
+      return empty();
+    }
+    if (count >= values.size()) {
+      return this;
+    }
+    return new ImmutableList<>(new ArrayList<>(values.subList(0, count)), true);
+  }
+
+  /**
+   * Returns a list without the first {@code count} elements.
+   *
+   * @param count number of elements to drop
+   * @return immutable list after dropping elements
+   */
+  public @NonNull ImmutableList<T> drop(int count) {
+    if (count <= 0) {
+      return this;
+    }
+    if (count >= values.size()) {
+      return empty();
+    }
+    return new ImmutableList<>(new ArrayList<>(values.subList(count, values.size())), true);
+  }
+
+  /**
+   * Returns elements while the predicate holds.
+   *
+   * @param predicate predicate to apply
+   * @return immutable list containing the prefix that matches
+   * @throws NullPointerException if {@code predicate} is {@code null}
+   */
+  public @NonNull ImmutableList<T> takeWhile(
+      @NonNull Predicate<? super @Nullable T> predicate) {
+    Objects.requireNonNull(predicate, "predicate");
+    if (values.isEmpty()) {
+      return empty();
+    }
+    final var list = new ArrayList<@Nullable T>();
+    for (final var value : values) {
+      if (!predicate.test(value)) {
+        break;
+      }
+      list.add(value);
+    }
+    if (list.isEmpty()) {
+      return empty();
+    }
+    if (list.size() == values.size()) {
+      return this;
+    }
+    return new ImmutableList<>(list, true);
+  }
+
+  /**
+   * Drops elements while the predicate holds.
+   *
+   * @param predicate predicate to apply
+   * @return immutable list after dropping the prefix that matches
+   * @throws NullPointerException if {@code predicate} is {@code null}
+   */
+  public @NonNull ImmutableList<T> dropWhile(
+      @NonNull Predicate<? super @Nullable T> predicate) {
+    Objects.requireNonNull(predicate, "predicate");
+    if (values.isEmpty()) {
+      return empty();
+    }
+    int index = 0;
+    for (; index < values.size(); index++) {
+      if (!predicate.test(values.get(index))) {
+        break;
+      }
+    }
+    if (index == 0) {
+      return this;
+    }
+    if (index >= values.size()) {
+      return empty();
+    }
+    return new ImmutableList<>(new ArrayList<>(values.subList(index, values.size())), true);
+  }
+
+  /**
+   * Returns a list with distinct elements, preserving encounter order.
+   *
+   * @return list of distinct elements
+   */
+  public @NonNull ImmutableList<T> distinct() {
+    if (values.isEmpty()) {
+      return empty();
+    }
+    final var list = new ArrayList<@Nullable T>();
+    for (final var value : values) {
+      if (!list.contains(value)) {
+        list.add(value);
+      }
+    }
+    if (list.size() == values.size()) {
+      return this;
+    }
+    return new ImmutableList<>(list, true);
+  }
+
+  /**
+   * Returns a list with elements in reverse order.
+   *
+   * @return reversed list
+   */
+  public @NonNull ImmutableList<T> reverse() {
+    if (values.size() <= 1) {
+      return this;
+    }
+    final var list = new ArrayList<@Nullable T>(values);
+    Collections.reverse(list);
+    return new ImmutableList<>(list, true);
+  }
+
+  /**
+   * Returns a list sorted by the provided comparator.
+   *
+   * @param comparator comparator to use
+   * @return sorted list
+   * @throws NullPointerException if {@code comparator} is {@code null}
+   */
+  public @NonNull ImmutableList<T> sorted(
+      @NonNull java.util.Comparator<? super @Nullable T> comparator) {
+    Objects.requireNonNull(comparator, "comparator");
+    if (values.size() <= 1) {
+      return this;
+    }
+    final var list = new ArrayList<@Nullable T>(values);
+    list.sort(comparator);
     return new ImmutableList<>(list, true);
   }
 
