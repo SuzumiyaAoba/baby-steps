@@ -3,6 +3,7 @@ package babysteps.core;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
+import java.util.Comparator;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Objects;
@@ -509,9 +510,9 @@ public final class ImmutableList<T> implements Iterable<@Nullable T> {
    * @param comparator comparator to use
    * @return sorted list
    * @throws NullPointerException if {@code comparator} is {@code null}
-   */
+  */
   public @NonNull ImmutableList<T> sorted(
-      java.util.@NonNull Comparator<? super @Nullable T> comparator) {
+      @NonNull Comparator<? super @Nullable T> comparator) {
     Objects.requireNonNull(comparator, "comparator");
     if (values.size() <= 1) {
       return this;
