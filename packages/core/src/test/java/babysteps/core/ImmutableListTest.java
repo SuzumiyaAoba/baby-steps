@@ -93,6 +93,38 @@ class ImmutableListTest {
   }
 
   @Test
+  @SuppressWarnings("unchecked")
+  void privateConstructor_withAlreadyOwnedFalse_expectedCopiedUnmodifiable() throws Exception {
+    // Arrange
+    final var values = new ArrayList<String>();
+    values.add("a");
+    final var constructor = ImmutableList.class.getDeclaredConstructor(List.class, boolean.class);
+    constructor.setAccessible(true);
+
+    // Act
+    final var sut = (ImmutableList<String>) constructor.newInstance(values, false);
+    values.add("b");
+    final ThrowingCallable action = () -> sut.toList().add("c");
+
+    // Assert
+    softly.assertThat(sut.toList()).containsExactly("a");
+    softly.assertThatThrownBy(action).isInstanceOf(UnsupportedOperationException.class);
+  }
+
+  @Test
+  void privateConstructor_withNullList_expectedException() throws Exception {
+    // Arrange
+    final var constructor = ImmutableList.class.getDeclaredConstructor(List.class, boolean.class);
+    constructor.setAccessible(true);
+
+    // Act
+    final ThrowingCallable action = () -> constructor.newInstance(null, true);
+
+    // Assert
+    softly.assertThatThrownBy(action).hasCauseInstanceOf(NullPointerException.class);
+  }
+
+  @Test
   void fromIterable_withEmpty_expectedEmpty() {
     // Arrange
     final var values = List.<String>of();
