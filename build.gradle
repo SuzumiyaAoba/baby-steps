@@ -17,7 +17,7 @@ subprojects {
 
   java {
     toolchain {
-      languageVersion = JavaLanguageVersion.of(21)
+      languageVersion = JavaLanguageVersion.of(resolveToolchainVersion())
     }
   }
 
@@ -36,6 +36,9 @@ subprojects {
 
   test {
     useJUnitPlatform()
+    if (!isJacocoSupported()) {
+      jacoco.enabled = false
+    }
     finalizedBy jacocoTestReport
   }
 
@@ -45,6 +48,7 @@ subprojects {
 
   jacocoTestReport {
     dependsOn test
+    onlyIf { isJacocoSupported() }
     reports {
       xml.required = true
       html.required = true
@@ -66,4 +70,16 @@ subprojects {
   tasks.named('build') {
     dependsOn 'spotlessApply'
   }
+}
+
+def resolveToolchainVersion() {
+  def ciValue = providers.environmentVariable('CI')
+  if (ciValue.isPresent()) {
+    return 21
+  }
+  return JavaLanguageVersion.current().asInt()
+}
+
+def isJacocoSupported() {
+  return JavaVersion.current().majorVersion.toInteger() <= 22
 }
