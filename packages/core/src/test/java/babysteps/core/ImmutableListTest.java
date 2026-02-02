@@ -789,6 +789,18 @@ class ImmutableListTest {
   }
 
   @Test
+  void takeWhile_withEmpty_expectedEmpty() {
+    // Arrange
+    final var sut = ImmutableList.<String>empty();
+
+    // Act
+    final var result = sut.takeWhile(value -> value.length() <= 2);
+
+    // Assert
+    softly.assertThat(result.isEmpty()).isTrue();
+  }
+
+  @Test
   void takeWhile_withAllMatching_expectedSameInstance() {
     // Arrange
     final var sut = ImmutableList.of("a", "bb");
@@ -1054,6 +1066,18 @@ class ImmutableListTest {
     // Assert
     softly.assertThat(result).isTrue();
     softly.assertThat(left.hashCode()).isEqualTo(right.hashCode());
+  }
+
+  @Test
+  void equals_withSameInstance_expectedTrue() {
+    // Arrange
+    final var sut = ImmutableList.of("a", "b");
+
+    // Act
+    final var result = sut.equals(sut);
+
+    // Assert
+    softly.assertThat(result).isTrue();
   }
 
   @Test
